@@ -94,8 +94,12 @@ Ces invariants sont aussi les points techniques à savoir défendre en soutenanc
 cdc-streaming-pipeline/
 ├── infra/
 │   ├── docker-compose.yml          # Postgres, Kafka (KRaft), Connect+Debezium, MinIO, MailHog, Kafbat UI
-│   ├── init.sql                    # schéma public.documents + schémas des consommateurs
-│   └── register-postgres.json      # config du connecteur Debezium
+│   ├── init-scripts/               # rejoués au 1er boot par docker-entrypoint-initdb.d
+│   │   ├── 01-documents.sql        # schéma public + table documents (REPLICA IDENTITY FULL)
+│   │   └── 02-consumer-schemas.sql # schémas audit/notif/integrity/ocr/siem + leurs tables
+│   ├── connectors/
+│   │   └── postgres-source.json    # config du connecteur Debezium source
+│   └── register-connector.ps1      # enregistre le connecteur via l'API REST de Kafka Connect
 ├── pom.xml                         # parent POM (dependencyManagement, modules)
 ├── common/                         # DTO de l'enveloppe Debezium (before/after/op/ts_ms), désérialisation
 ├── documents-api/
@@ -146,13 +150,16 @@ Le scope maîtrisé est une décision, pas une limite. Un PFE qui tourne à 100 
 ## Commandes
 
 ```bash
-# Infra
-cd infra && docker compose up -d
-docker compose ps                       # les 6 containers doivent être "running"
+# Infra — repartir sur des volumes propres puis démarrer
+cd infra
+docker compose down -v                  # sinon init-scripts/ ne se rejoue pas, le vieux slot persiste
+docker compose up -d
+docker compose ps                       # 6 containers "running" (+ createbuckets en Exited 0, normal)
 
 # Enregistrer le connecteur Debezium (attendre ~40s que Connect démarre)
-curl -X POST -H "Content-Type: application/json" \
-  --data @register-postgres.json http://localhost:8083/connectors
+#   Windows : .\register-connector.ps1
+#   sinon   : curl -X POST -H "Content-Type: application/json" \
+#               --data @connectors/postgres-source.json http://localhost:8083/connectors
 curl http://localhost:8083/connectors/source-postgres-connector/status   # doit être RUNNING
 
 # Prouver que le CDC tourne (jalon S2)
