@@ -1,0 +1,1022 @@
+%% ============================================================
+%%  CAHIER DES CHARGES & PLAN DE R\'EALISATION
+%%  Plateforme documentaire \'ev\'enementielle (Pipeline CDC)
+%%  D\'ep\^ot et traitement de documents : documents-api -> Debezium ->
+%%  Kafka -> fan-out de 5 microservices consommateurs
+%%  Auteur : Lazim Wassim (fili\`ere DSI, EMSI Casablanca)
+%%  Encadrant professionnel : Bekkali Mohamed (6Solutions)
+%%  Type   : Cahier des charges + plan de r\'ealisation (PFE)
+%%  IMPORTANT : Compiler avec XeLaTeX ou pdfLaTeX
+%%  D\'ependance suppl\'ementaire : package pgfgantt (fourni sur Overleaf)
+%% ============================================================
+\documentclass[12pt,a4paper,openany]{report}
+
+%% -- Packages --------------------------------------------------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, linkcolor=blue, urlcolor=blue, citecolor=blue, linktoc=all}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{tcolorbox}
+\usepackage{caption}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{needspace}
+\usepackage{amssymb}
+\usepackage{colortbl}
+\usepackage{multirow}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta,calc,shapes.geometric,shapes.multipart,fit}
+\usepackage{pgfgantt}
+
+%% Espacement
+\setlength{\parindent}{1.5em}
+\setlength{\parskip}{0pt}
+\frenchspacing
+
+%% Titres
+\titleformat{\chapter}[display]
+  {\normalfont\huge\bfseries\raggedright}
+  {\chaptertitlename\ \thechapter}{16pt}{\Huge\raggedright}
+\titleformat{\section}
+  {\normalfont\Large\bfseries\raggedright}{\thesection}{1em}{}
+\titleformat{\subsection}
+  {\normalfont\large\bfseries\raggedright}{\thesubsection}{1em}{}
+\titleformat{\subsubsection}
+  {\normalfont\normalsize\bfseries\raggedright}{\thesubsubsection}{1em}{}
+
+%% En-t\^etes
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\small Plateforme documentaire --- Cahier des charges}
+\lhead{\small \rightmark}
+\cfoot{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\sectionmark}[1]{\markright{\thesection.\ #1}}
+\renewcommand{\chaptermark}[1]{\markboth{\chaptername\ \thechapter.\ #1}{}}
+
+%% Bo\^ites color\'ees
+\tcbuselibrary{skins,breakable}
+\newtcolorbox{reqbox}[2][]{
+  colback=blue!5, colframe=blue!50,
+  title={\textbf{#2}}, fonttitle=\small\bfseries,
+  breakable, #1
+}
+\newtcolorbox{notebox}[1][]{
+  colback=orange!5, colframe=orange!60,
+  fonttitle=\bfseries, breakable, #1
+}
+\newtcolorbox{critbox}[1][]{
+  colback=red!5, colframe=red!60,
+  fonttitle=\bfseries, breakable, #1
+}
+
+%% Petite l\'egende monospace utilis\'ee dans les diagrammes
+\newcommand{\lbl}{\scriptsize\ttfamily\color{black!55}}
+
+%% ============================================================
+\begin{document}
+
+%% -- Page de titre ---------------------------------------------
+\begin{titlepage}
+\centering
+\vspace*{0.8cm}
+
+% Logos (logo.png = EMSI ; logo-6solutions = 6Solutions, organisme d'accueil).
+% \`A placer \`a la racine du projet Overleaf, au m\^eme niveau que ce fichier .tex.
+% width + height + keepaspectratio => chaque logo tient dans sa case (pas de collision).
+\begin{minipage}[c]{0.44\linewidth}\centering
+  \includegraphics[width=\linewidth,height=2.6cm,keepaspectratio]{logo.png}
+\end{minipage}\hfill
+\begin{minipage}[c]{0.44\linewidth}\centering
+  \includegraphics[width=\linewidth,height=2.6cm,keepaspectratio]{logo-6solutions}
+\end{minipage}\\[1.9cm]
+
+\rule{0.6\linewidth}{0.4pt}\\[0.7cm]
+
+{\Huge\bfseries Plateforme Documentaire \'Ev\'enementielle}\\[0.45cm]
+{\Large D\'ep\^ot et traitement de documents\\ via un pipeline CDC event-driven}\\[0.6cm]
+{\large\bfseries Cahier des Charges \& Plan de R\'ealisation}\\[0.25cm]
+{\normalsize Projet de Fin d'\'Etudes (PFE)}
+
+\vspace{0.6cm}
+\rule{0.6\linewidth}{0.4pt}\\[2.1cm]
+
+\begin{minipage}[t]{0.45\linewidth}
+\centering
+{\small\scshape R\'ealis\'e par}\\[0.25cm]
+{\large Lazim Wassim}\\[0.22cm]
+{\small Fili\`ere DSI --- 4\textsuperscript{e} ann\'ee}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.45\linewidth}
+\centering
+{\small\scshape Encadrant professionnel}\\[0.25cm]
+{\large Bekkali Mohamed}
+\end{minipage}
+
+\vspace{1.2cm}
+{\small\scshape Organisme d'accueil}\\[0.25cm]
+{\large 6Solutions}
+
+\vfill
+{\small D\'ep\^ot Git~: \texttt{cdc-streaming-pipeline}}\\[0.2cm]
+{\normalsize Ann\'ee universitaire 2025 -- 2026}
+\vspace{0.5cm}
+\end{titlepage}
+
+%% -- Tables --------------------------------------------------
+\newpage
+\tableofcontents
+\newpage
+\listoftables
+
+%% -- Fiche du document ----------------------------------------
+\newpage
+\chapter*{Fiche du Document}
+\addcontentsline{toc}{chapter}{Fiche du Document}
+
+\begin{table}[H]
+\centering
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+\textbf{Rubrique} & \textbf{Contenu} \\
+\midrule
+Titre du projet   & Plateforme documentaire \'ev\'enementielle bas\'ee sur un pipeline CDC \\
+Type de document  & Cahier des charges et plan de r\'ealisation \\
+Auteur            & Lazim Wassim (fili\`ere DSI, EMSI Casablanca) \\
+Encadrant professionnel & Bekkali Mohamed (6Solutions) \\
+Organisme d'accueil & 6Solutions \\
+Dur\'ee du projet & 5 semaines, du [date de d\'ebut] au [date de fin] \\
+Version           & 1.0 \\
+Date de r\'edaction & [JJ/MM/AAAA] \\
+Statut            & Soumis pour validation par l'encadrant \\
+\bottomrule
+\end{tabularx}
+\caption{Fiche signal\'etique du cahier des charges}
+\end{table}
+
+\begin{notebox}
+Ce document constitue \`a la fois le \textbf{cahier des charges} et le \textbf{plan de r\'ealisation d\'etaill\'e sur cinq semaines} (chapitre~\ref{chap:planning}). Il est destin\'e \`a l'\'etudiant (r\'ef\'erence de conception), \`a l'encadrant (base d'\'evaluation) et au jury de soutenance (compr\'ehension des choix techniques).
+\end{notebox}
+
+%% ============================================================
+\newpage
+
+%% ── CHAPITRE 1 ───────────────────────────────────────────────
+\chapter{Introduction G\'en\'erale}
+
+La transformation num\'erique des organisations s'accompagne d'une production continue de documents (contrats, factures, pi\`eces justificatives, rapports) dont le traitement ne peut plus se satisfaire de cha\^ines applicatives monolithiques et fortement coupl\'ees. Lorsqu'un document est d\'epos\'e, plusieurs traitements h\'et\'erog\`enes doivent \^etre d\'eclench\'es~: notifier l'utilisateur, tracer l'op\'eration \`a des fins d'audit, garantir l'int\'egrit\'e du fichier, en extraire le contenu textuel et surveiller d'\'eventuels comportements anormaux. Faire porter l'ensemble de ces responsabilit\'es par une unique application, ou les cha\^iner par des appels synchrones successifs, conduit \`a un syst\`eme rigide, difficile \`a faire \'evoluer et vuln\'erable aux pannes en cascade.
+
+Le pr\'esent projet de fin d'\'etudes propose une r\'eponse fond\'ee sur une \textbf{architecture \'ev\'enementielle (event-driven)} coupl\'ee au \textbf{Change Data Capture (CDC)}. Concr\`etement, le d\'ep\^ot d'un document dans l'application d\'eclenche, sans aucun appel direct, un ensemble de traitements ind\'ependants ex\'ecut\'es en parall\`ele. Le m\'ecanisme repose sur la capture automatique des changements de la base de donn\'ees~: l'outil Debezium lit le journal de transactions de PostgreSQL et publie chaque nouvel enregistrement sous forme d'\'ev\'enement sur le bus Apache Kafka, que cinq microservices consomment de fa\c{c}on totalement d\'ecoupl\'ee.
+
+Ce document d\'efinit le p\'erim\`etre fonctionnel et technique de la plateforme, justifie chacun des choix technologiques impos\'es, d\'ecrit l'architecture cible et le mod\`ele de donn\'ees, puis pr\'esente un plan de r\'ealisation d\'etaill\'e sur cinq semaines assorti de jalons v\'erifiables. L'accent est mis sur l'alignement avec l'\'ecosyst\`eme Java entreprise (Spring Boot, Jakarta EE), conform\'ement \`a la sp\'ecialit\'e de l'encadrant. Le projet est r\'ealis\'e dans le cadre d'un stage de fin d'\'etudes au sein de la soci\'et\'e \textbf{6Solutions}.
+
+%% ── CHAPITRE 2 ───────────────────────────────────────────────
+\chapter{Contexte et Probl\'ematique}
+
+\section{Contexte}
+
+Une organisation qui centralise le d\'ep\^ot de documents doit, \`a chaque nouvel envoi, orchestrer plusieurs traitements de natures diff\'erentes~: envoi d'une confirmation \`a l'utilisateur, journalisation \`a des fins de conformit\'e, calcul d'une empreinte d'int\'egrit\'e, extraction du texte pour indexation, et surveillance de s\'ecurit\'e. Ces traitements n'ont ni le m\^eme rythme, ni les m\^emes d\'ependances, ni la m\^eme criticit\'e~; il serait donc contre-productif de les ex\'ecuter de mani\`ere synchrone au sein d'une m\^eme requ\^ete d'upload.
+
+\section{Probl\'ematique}
+
+Deux approches classiques permettent de propager un \'ev\'enement m\'etier vers plusieurs consommateurs, mais chacune pr\'esente des limites structurelles.
+
+\begin{itemize}
+  \item \textbf{L'int\'egration point \`a point} --- l'application appelle directement chaque service (notification, audit, etc.), ou les cha\^ine par des appels synchrones. Le couplage devient fort~: l'ajout d'un nouveau traitement impose de modifier l'application source, et l'indisponibilit\'e d'un service peut faire \'echouer l'ensemble de la requ\^ete (pannes en cascade). Faire \'ecrire l'application \`a la fois dans sa base et dans une file de messages (\emph{dual write}) casse par ailleurs l'atomicit\'e et introduit un risque d'incoh\'erence.
+  \item \textbf{Le \emph{polling} p\'eriodique} --- un traitement interroge r\'eguli\`erement la base pour d\'etecter les nouveaux enregistrements. Cette approche sollicite inutilement la base source, introduit une latence \'egale \`a la p\'eriode d'interrogation, et ne d\'etecte pas fiablement les suppressions ni les mises \`a jour interm\'ediaires.
+\end{itemize}
+
+Le \textbf{Change Data Capture bas\'e sur les logs de transaction} r\'epond \`a ces limites~: un connecteur lit directement le \emph{Write-Ahead Log} (WAL) de la base, sans jamais interroger les tables ni modifier le code applicatif source, et publie chaque changement comme \'ev\'enement sur un bus de messages. Associ\'e \`a une diffusion en \emph{fan-out}, ce m\'ecanisme permet \`a un nombre quelconque de consommateurs de r\'eagir de mani\`ere ind\'ependante et asynchrone.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\textwidth}{p{3.4cm}XXX}
+\toprule
+\textbf{Crit\`ere} & \textbf{Point \`a point} & \textbf{Polling p\'eriodique} & \textbf{CDC event-driven} \\
+\midrule
+Couplage source $\rightarrow$ consommateurs & Fort (appels directs) & Moyen (acc\`es \`a la base) & Faible (via topic Kafka) \\[3pt]
+Latence de propagation & Faible mais bloquante & \'Elev\'ee ($=$ p\'eriode) & Faible et asynchrone \\[3pt]
+Charge sur la base source & Nulle \`a mod\'er\'ee & \'Elev\'ee (requ\^etes r\'ep\'et\'ees) & Nulle (lecture du WAL) \\[3pt]
+Atomicit\'e (pas de dual write) & Compromise & Pr\'eserv\'ee & Pr\'eserv\'ee \\[3pt]
+D\'etection des suppressions & Manuelle & Peu fiable & Native (\texttt{op=d}) \\[3pt]
+Rejouabilit\'e des \'ev\'enements & Non & Non & Oui (offsets Kafka) \\[3pt]
+Extensibilit\'e (ajout d'un consommateur) & Modifie la source & Nouvelle t\^ache de polling & Nouveau consumer group \\
+\bottomrule
+\end{tabularx}
+\caption{Comparaison des approches d'int\'egration multi-consommateurs}
+\end{table}
+
+%% ── CHAPITRE 3 ───────────────────────────────────────────────
+\chapter{Objectifs et P\'erim\`etre}
+
+\section{Objectif G\'en\'eral}
+
+Concevoir et r\'ealiser une plateforme de d\'ep\^ot et de traitement de documents, fond\'ee sur un pipeline CDC event-driven, dans laquelle le d\'ep\^ot d'un document d\'eclenche automatiquement et de mani\`ere totalement d\'ecoupl\'ee cinq traitements parall\`eles~: audit, notification, v\'erification d'int\'egrit\'e, extraction de texte et surveillance de s\'ecurit\'e.
+
+\section{Objectifs Sp\'ecifiques}
+
+\begin{table}[H]
+\centering
+\begin{tabularx}{\textwidth}{lXl}
+\toprule
+\textbf{ID} & \textbf{Objectif sp\'ecifique mesurable} & \textbf{Priorit\'e} \\
+\midrule
+OBJ-01 & Capturer chaque d\'ep\^ot de document sans couplage (aucun appel direct de l'API vers les services consommateurs) & Critique \\
+OBJ-02 & Stocker le fichier hors de la base et hors de Kafka (\emph{Claim Check}), seules les m\'etadonn\'ees transitant par le pipeline & Critique \\
+OBJ-03 & Ma\^itriser la latence de bout en bout~: e-mail de notification visible en moins de 5\,s apr\`es l'upload & Critique \\
+OBJ-04 & Garantir qu'aucun \'ev\'enement n'est perdu, m\^eme en cas de red\'emarrage d'un consommateur (livraison \emph{at-least-once}) & Critique \\
+OBJ-05 & Assurer une int\'egrit\'e v\'erifiable des documents via une cha\^ine de hachage SHA-256 & Important \\
+OBJ-06 & Extraire le contenu textuel des documents (PDF/DOCX via Tika) et le rendre consultable & Important \\
+OBJ-07 & D\'etecter au moins trois cat\'egories de comportements anormaux via un moteur de r\`egles (SIEM) & Important \\
+OBJ-08 & Rendre l'\'ecosyst\`eme enti\`erement reproductible en local via Docker Compose, avec une CI verte & Important \\
+\bottomrule
+\end{tabularx}
+\caption{Objectifs sp\'ecifiques du projet}
+\end{table}
+
+\section{P\'erim\`etre}
+
+\begin{table}[H]
+\centering
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+\textbf{\'El\'ement} & \textbf{D\'efinition} \\
+\midrule
+Inclus & D\'ep\^ot de documents via une interface Angular (upload multipart) \\
+Inclus & Enregistrement des m\'etadonn\'ees dans PostgreSQL et du fichier binaire dans MinIO (\emph{Claim Check}) \\
+Inclus & Capture CDC des insertions via Debezium (plugin \texttt{pgoutput}) et publication sur Kafka \\
+Inclus & Fan-out vers cinq microservices consommateurs \`a consumer groups distincts \\
+Inclus & Cha\^ine de hachage SHA-256 avec endpoint de v\'erification d'int\'egrit\'e \\
+Inclus & Extraction de texte (Apache Tika ; Tesseract/tess4j en option) \\
+Inclus & Moteur de r\`egles SIEM (trois r\`egles de d\'etection) \\
+Inclus & Gestion d'erreurs par \emph{Dead Letter Topic} et frontend Angular de consultation \\
+Exclu & \textbf{Blockchain publique} --- seule une cha\^ine de hachage locale est mise en \oe uvre \\
+Exclu & \textbf{Orchestration Kubernetes} --- l'ex\'ecution reste 100\,\% locale via Docker Compose \\
+Exclu & \textbf{Multi-tenant} --- une seule organisation, pas d'isolation par locataire \\
+Exclu & Cluster Kafka multi-broker et haute disponibilit\'e (mono-broker KRaft) \\
+Exclu & Authentification f\'ed\'er\'ee (Keycloak/SSO) --- JWT basique en option, sinon perspective \\
+Exclu & D\'etection SIEM par apprentissage automatique --- moteur \`a r\`egles uniquement \\
+\bottomrule
+\end{tabularx}
+\caption{P\'erim\`etre du projet~: \'el\'ements inclus et exclus}
+\end{table}
+
+%% ── CHAPITRE 4 ───────────────────────────────────────────────
+\chapter{Acteurs et Besoins Fonctionnels}
+
+\section{Identification des Acteurs}
+
+\begin{table}[H]
+\centering
+\begin{tabularx}{\textwidth}{llX}
+\toprule
+\textbf{Acteur} & \textbf{Type} & \textbf{R\^ole / Interaction} \\
+\midrule
+Utilisateur d\'eposant   & Externe & D\'epose des documents et consulte leur statut via l'interface Angular \\
+Auditeur / Conformit\'e  & Externe & Consulte le journal d'audit des op\'erations \\
+Analyste s\'ecurit\'e    & Externe & Consulte les \'ev\'enements et alertes de s\'ecurit\'e (SIEM) \\
+Administrateur technique & Interne & Exploite et supervise le pipeline (Kafbat UI, Kafka Connect, Actuator) \\
+Debezium / Kafka Connect & Syst\`eme & Capture les changements du WAL et les publie sur Kafka \\
+Kafka (KRaft)            & Syst\`eme & Transporte et conserve les \'ev\'enements pour les cinq consommateurs \\
+\bottomrule
+\end{tabularx}
+\caption{Acteurs du syst\`eme}
+\end{table}
+
+\section{Nomenclature et Priorisation}
+
+Les besoins fonctionnels sont identifi\'es par des codes \textbf{RF-XX} et priorit\'es selon la classification MoSCoW~: \textbf{M} (\textit{Must Have}, indispensable), \textbf{S} (\textit{Should Have}, important), \textbf{C} (\textit{Could Have}, souhaitable si le temps le permet).
+
+\section{Module A --- D\'ep\^ot et API (\texttt{documents-api})}
+
+\begin{longtable}{p{1.3cm}p{9.2cm}p{1.5cm}}
+  \toprule
+  \textbf{ID} & \textbf{Description du besoin} & \textbf{Priorit\'e} \\
+  \midrule
+  \endhead
+  \bottomrule
+  \endfoot
+
+  RF-01 & Permettre \`a l'utilisateur de d\'eposer un document via l'interface Angular (upload multipart~: fichier + m\'etadonn\'ees) & M \\[4pt]
+  RF-02 & Enregistrer les m\'etadonn\'ees du document dans PostgreSQL et stocker le fichier binaire dans MinIO (\emph{Claim Check}), le fichier ne transitant jamais par Kafka ni par la base & M \\[4pt]
+  RF-03 & Exposer des endpoints REST document\'es via OpenAPI/Swagger (d\'ep\^ot, liste, d\'etail, t\'el\'echargement) & M \\[4pt]
+  RF-04 & Permettre la consultation de la liste des documents et de leur statut consolid\'e (hachage, OCR, alertes) & S \\
+\end{longtable}
+
+\section{Module B --- Capture CDC et Diffusion}
+
+\begin{longtable}{p{1.3cm}p{9.2cm}p{1.5cm}}
+  \toprule
+  \textbf{ID} & \textbf{Description du besoin} & \textbf{Priorit\'e} \\
+  \midrule
+  \endhead
+  \bottomrule
+  \endfoot
+
+  RF-05 & Capturer automatiquement chaque insertion dans la table \texttt{documents} via Debezium (lecture du WAL, plugin \texttt{pgoutput}), sans appel direct depuis l'API & M \\[4pt]
+  RF-06 & Publier chaque changement captur\'e sous forme d'enveloppe d'\'ev\'enement Debezium (\texttt{before}, \texttt{after}, \texttt{op}, \texttt{ts\_ms}) sur le topic Kafka \texttt{documents} & M \\[4pt]
+  RF-07 & Diffuser l'\'ev\'enement en fan-out vers cinq consumer groups distincts, chacun traitant l'\'ev\'enement de mani\`ere ind\'ependante & M \\
+\end{longtable}
+
+\section{Module C --- Services Consommateurs}
+
+\begin{longtable}{p{1.3cm}p{9.2cm}p{1.5cm}}
+  \toprule
+  \textbf{ID} & \textbf{Description du besoin} & \textbf{Priorit\'e} \\
+  \midrule
+  \endhead
+  \bottomrule
+  \endfoot
+
+  RF-08 & \textbf{audit-service} --- consigner une trace d'audit (qui, quoi, quand) pour chaque \'ev\'enement re\c{c}u & M \\[4pt]
+  RF-09 & \textbf{notification-service} --- envoyer un e-mail de confirmation \`a l'utilisateur (MailHog en environnement de d\'eveloppement) & M \\[4pt]
+  RF-10 & \textbf{blockchain-service} --- calculer le hachage SHA-256 du document et le cha\^iner selon $h_n = \mathrm{SHA256}(h_{\mathrm{doc}} \,\|\, h_{n-1})$ & M \\[4pt]
+  RF-11 & \textbf{blockchain-service} --- exposer un endpoint de v\'erification d'int\'egrit\'e recalculant et comparant la cha\^ine de hachage & S \\[4pt]
+  RF-12 & \textbf{ocr-service} --- r\'ecup\'erer le fichier depuis MinIO et extraire son texte (Apache Tika pour PDF/DOCX) & M \\[4pt]
+  RF-13 & \textbf{ocr-service} --- extraire le texte des images via Tesseract/tess4j & C \\[4pt]
+  RF-14 & \textbf{ocr-service} --- stocker le texte extrait et le rendre consultable & S \\[4pt]
+  RF-15 & \textbf{siem-service} --- enregistrer les \'ev\'enements de s\'ecurit\'e li\'es \`a chaque d\'ep\^ot & M \\[4pt]
+  RF-16 & \textbf{siem-service} --- d\'etecter les comportements anormaux via un moteur de r\`egles~: fr\'equence de d\'ep\^ots, horaires inhabituels, extensions suspectes (trois r\`egles) & S \\
+\end{longtable}
+
+\section{Module D --- Robustesse et Extensibilit\'e}
+
+\begin{longtable}{p{1.3cm}p{9.2cm}p{1.5cm}}
+  \toprule
+  \textbf{ID} & \textbf{Description du besoin} & \textbf{Priorit\'e} \\
+  \midrule
+  \endhead
+  \bottomrule
+  \endfoot
+
+  RF-17 & Rediriger tout message dont le traitement \'echoue apr\`es \'epuisement des tentatives vers un \emph{Dead Letter Topic}, sans bloquer le flux principal & S \\[4pt]
+  RF-18 & Permettre le rejeu (\emph{replay}) du topic Kafka depuis l'offset initial afin de reconstituer l'\'etat d'un consommateur (sc\'enario de d\'emonstration) & C \\[4pt]
+  RF-19 & D\'emontrer l'extensibilit\'e~: ajouter un septi\`eme service consommateur sans modifier l'existant (nouveau consumer group) & C \\
+\end{longtable}
+
+%% ── CHAPITRE 5 ───────────────────────────────────────────────
+\chapter{Besoins Non-Fonctionnels}
+
+Les besoins non-fonctionnels sont identifi\'es par des codes \textbf{RNF-XX}. Ils d\'efinissent les qualit\'es attendues du syst\`eme, assorties de cibles mesurables et de leur m\'ecanisme de conformit\'e.
+
+\section{Fiabilit\'e et Coh\'erence}
+\label{sec:fiabilite}
+
+\begin{longtable}{p{1.4cm}p{6.7cm}p{4cm}}
+  \toprule
+  \textbf{ID} & \textbf{Exigence et cible} & \textbf{M\'ecanisme de conformit\'e} \\
+  \midrule
+  \endhead
+  \bottomrule
+  \endfoot
+
+  RNF-01 & Livraison \emph{at-least-once} entre Debezium et les consommateurs~; aucun \'ev\'enement perdu, m\^eme apr\`es red\'emarrage d'un consommateur & Kafka (r\'eplication, accus\'es de r\'eception), offsets Kafka Connect \\[4pt]
+  RNF-02 & Idempotence de chaque consommateur~: une re-livraison ne produit ni double audit, ni double hachage, ni double e-mail & Cl\'e naturelle (\texttt{id\_document} + \texttt{ts\_ms}/offset) + \emph{upsert} \\[4pt]
+  RNF-03 & Un message invalide part en \emph{Dead Letter Topic} sans bloquer le flux principal & \texttt{DefaultErrorHandler} + \texttt{DeadLetterPublishingRecoverer} \\[4pt]
+  RNF-04 & Le connecteur Debezium reprend exactement l\`a o\`u il s'est arr\^et\'e apr\`es un red\'emarrage & Offsets persist\'es par Kafka Connect \\
+\end{longtable}
+
+\section{Performance}
+
+\begin{longtable}{p{1.4cm}p{6.7cm}p{4cm}}
+  \toprule
+  \textbf{ID} & \textbf{Exigence et cible} & \textbf{M\'ecanisme de conformit\'e} \\
+  \midrule
+  \endhead
+  \bottomrule
+  \endfoot
+
+  RNF-05 & Latence de bout en bout upload $\rightarrow$ e-mail de notification (MailHog) inf\'erieure \`a 5\,s (p95) & Architecture \'ev\'enementielle sans \'etape batch interm\'ediaire \\[4pt]
+  RNF-06 & Un service consommateur lent ne d\'egrade pas la latence des autres services & Fan-out~: consumer groups ind\'ependants et parall\`eles \\[4pt]
+  RNF-07 & Absorber une charge de [N] d\'ep\^ots/minute sans accumulation durable de lag & Consommation asynchrone, partitionnement du topic \\
+\end{longtable}
+
+\section{S\'ecurit\'e et Tra\c{c}abilit\'e}
+
+\begin{longtable}{p{1.4cm}p{6.7cm}p{4cm}}
+  \toprule
+  \textbf{ID} & \textbf{Exigence et cible} & \textbf{M\'ecanisme de conformit\'e} \\
+  \midrule
+  \endhead
+  \bottomrule
+  \endfoot
+
+  RNF-08 & Aucun identifiant (base, MinIO, SMTP) ne doit \^etre cod\'e en dur dans le code source & Variables d'environnement Docker / \texttt{application.properties} externalis\'e \\[4pt]
+  RNF-09 & Toute op\'eration de d\'ep\^ot doit \^etre tra\c{c}able de bout en bout & audit-service (journal) + siem-service (\'ev\'enements de s\'ecurit\'e) \\[4pt]
+  RNF-10 & \textit{(Optionnel)} L'acc\`es \`a l'API doit pouvoir \^etre restreint par authentification & Spring Security + JWT (Keycloak en perspective) \\
+\end{longtable}
+
+\section{D\'ecouplage, Observabilit\'e et Portabilit\'e}
+
+\begin{longtable}{p{1.4cm}p{6.7cm}p{4cm}}
+  \toprule
+  \textbf{ID} & \textbf{Exigence et cible} & \textbf{M\'ecanisme de conformit\'e} \\
+  \midrule
+  \endhead
+  \bottomrule
+  \endfoot
+
+  RNF-11 & D\'ecouplage total~: les consommateurs ne connaissent que le topic Kafka, jamais l'API ni les autres services & Communication uniquement via le topic \texttt{documents} \\[4pt]
+  RNF-12 & Ajout d'un consommateur sans modification de l'existant & Nouveau consumer group s'abonnant au m\^eme topic \\[4pt]
+  RNF-13 & La sant\'e de chaque service et l'\'etat des topics doivent \^etre observables & Spring Boot Actuator (\texttt{/actuator/health}) + Kafbat UI \\[4pt]
+  RNF-14 & L'\'ecosyst\`eme complet doit d\'emarrer de fa\c{c}on reproductible sur toute machine disposant de Docker & \texttt{docker compose up}, aucune installation locale requise \\[4pt]
+  RNF-15 & Le code doit respecter une architecture en couches strictes et \^etre couvert par des tests & Couches \texttt{controller/service/repository/entity/dto} + Testcontainers \\
+\end{longtable}
+
+%% ── CHAPITRE 6 ───────────────────────────────────────────────
+\chapter{Architecture Technique D\'etaill\'ee}
+\label{chap:archi}
+
+\section{Principe G\'en\'eral}
+
+L'architecture s'inspire des sch\'emas de r\'ef\'erence cloud de Microsoft Azure (\emph{Ingest $\rightarrow$ Store $\rightarrow$ Process $\rightarrow$ Consume}, compl\'et\'es d'un socle transversal de s\'ecurit\'e et d'observabilit\'e), transpos\'es en briques open-source ex\'ecut\'ees en local. Chaque composant ignore l'existence des autres et ne communique qu'\`a travers Kafka, ce qui garantit un d\'ecouplage total et une extensibilit\'e naturelle.
+
+\section{Diagramme d'Architecture}
+
+\begin{figure}[H]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[
+  box/.style={draw, thick, rounded corners=1pt, align=center,
+              minimum width=3.2cm, minimum height=1cm, font=\small},
+  svc/.style={box, minimum width=4cm, font=\footnotesize},
+  infra/.style={box, draw=orange!75},
+  store/.style={box, draw=blue!60},
+  arrow/.style={-{Latex[length=2.2mm]}, thick},
+  back/.style={-{Latex[length=2.2mm]}, thick, dashed, color=blue!55},
+  lab/.style={font=\scriptsize, fill=white, inner sep=1.5pt}
+]
+% Frontend
+\node[box] (ang) at (9,13) {Angular SPA\\ {\lbl d\'ep\^ot de documents}};
+% API + stockage
+\node[box] (api) at (9,10.4) {documents-api\\ {\lbl Spring Boot}};
+\node[store] (pg) at (3.5,10.4) {PostgreSQL\\ {\lbl m\'etadonn\'ees + WAL}};
+\node[infra] (minio) at (14.5,10.4) {MinIO\\ {\lbl fichiers --- S3 local}};
+% CDC + streaming
+\node[box] (deb) at (3.5,7.8) {Debezium\\ {\lbl Kafka Connect}};
+\node[box] (kafka) at (9,6.0) {Apache Kafka\\ {\lbl topic documents}};
+% Consommateurs (fan-out) -- espac\'es de 4.5 cm, largeur 4 cm
+\node[svc] (audit) at (0,3.0) {audit-service};
+\node[svc] (notif) at (4.5,3.0) {notification-service};
+\node[svc] (block) at (9,3.0) {blockchain-service};
+\node[svc] (ocr)   at (13.5,3.0) {ocr-service};
+\node[svc] (siem)  at (18,3.0) {siem-service};
+% Infra e-mail
+\node[infra] (mail) at (4.5,0.8) {MailHog};
+
+% Flux nominal
+\draw[arrow] (ang) -- node[lab]{1 upload} (api);
+\draw[arrow] (api) -- node[lab]{2a m\'etadonn\'ees} (pg);
+\draw[arrow] (api) -- node[lab]{2b fichier} (minio);
+\draw[arrow] (pg) -- node[lab]{3 WAL} (deb);
+\draw[arrow] (deb) -- node[lab,pos=0.55]{4 publie} (kafka);
+\draw[arrow] (kafka) -- node[lab,pos=0.72]{5} (audit);
+\draw[arrow] (kafka) -- node[lab,pos=0.72]{5} (notif);
+\draw[arrow] (kafka) -- node[lab,pos=0.72]{5} (block);
+\draw[arrow] (kafka) -- node[lab,pos=0.72]{5} (ocr);
+\draw[arrow] (kafka) -- node[lab,pos=0.72]{5} (siem);
+\draw[arrow] (notif) -- node[lab]{6 e-mail} (mail);
+\draw[back] (ocr) to[out=70,in=-100] node[lab,pos=0.5]{lit le fichier} (minio);
+\end{tikzpicture}%
+}
+\caption{Architecture cible~: du d\'ep\^ot Angular au fan-out des cinq consommateurs}
+\end{figure}
+
+\section{Flux Nominal en Six \'Etapes}
+
+\begin{enumerate}
+  \item L'utilisateur d\'epose un document via l'interface Angular.
+  \item Angular envoie le document \`a l'API Spring Boot (\texttt{documents-api}).
+  \item L'API enregistre les m\'etadonn\'ees dans PostgreSQL (\'etape 2a) et stocke le fichier binaire dans MinIO (\'etape 2b) selon le pattern \emph{Claim Check}~: le fichier ne transite jamais par Kafka ni par la base.
+  \item Debezium d\'etecte automatiquement le nouvel enregistrement en lisant le journal de transactions (WAL) --- c'est le CDC (\'etape 3) --- puis publie un \'ev\'enement sur le topic Kafka \texttt{documents} (\'etape 4).
+  \item Cinq services consomment cet \'ev\'enement en parall\`ele (\'etape 5, fan-out), chacun avec son propre consumer group~: \texttt{audit-service}, \texttt{notification-service}, \texttt{blockchain-service}, \texttt{ocr-service} et \texttt{siem-service}.
+  \item Le \texttt{notification-service} envoie un e-mail \`a l'utilisateur (\'etape 6, capt\'e par MailHog), tandis que l'\texttt{ocr-service} r\'ecup\`ere le fichier binaire directement depuis MinIO pour en extraire le texte.
+\end{enumerate}
+
+\section{Correspondance avec le Sch\'ema de R\'ef\'erence Azure}
+
+Le tableau suivant \'etablit la transposition, brique par brique, du sch\'ema de r\'ef\'erence Azure fourni par l'encadrant vers les \'equivalents open-source retenus.
+
+\begin{table}[H]
+\centering
+\begin{tabularx}{\textwidth}{XX}
+\toprule
+\textbf{R\'ef\'erence Azure} & \textbf{\'Equivalent retenu (open-source)} \\
+\midrule
+Event Hubs & Apache Kafka \\
+Synapse pipelines (ingestion \'ev\'enementielle) & Debezium / Kafka Connect \\
+Data Lake + SQL pools & PostgreSQL (m\'etadonn\'ees) + MinIO (fichiers) \\
+Azure Machine Learning & \texttt{ocr-service} (Tika / Tesseract) \\
+AKS / managed endpoints & Microservices Spring Boot dockeris\'es \\
+Power BI & Dashboard Angular (statuts, audit, alertes) \\
+Power Apps / Automate & \texttt{notification-service} \\
+Entra ID & Spring Security + JWT (Keycloak en perspective) \\
+Key Vault & Secrets via variables d'environnement Docker \\
+Azure Monitor & Spring Boot Actuator + Kafbat UI \\
+Defender for Cloud & \texttt{siem-service} \\
+Azure DevOps \& GitHub & GitHub Actions CI \\
+\bottomrule
+\end{tabularx}
+\caption{Correspondance Azure $\rightarrow$ briques open-source}
+\end{table}
+
+\section{Points Techniques Valoris\'es}
+
+\begin{itemize}[noitemsep]
+  \item \textbf{Claim Check pattern} --- le fichier binaire est stock\'e dans MinIO~; seule une r\'ef\'erence (m\'etadonn\'ees) circule dans le pipeline, \'evitant de surcharger Kafka et la base.
+  \item \textbf{Fan-out par consumer groups} --- chaque service poss\`ede son propre groupe et re\c{c}oit une copie compl\`ete de chaque \'ev\'enement, ind\'ependamment des autres.
+  \item \textbf{S\'emantique \emph{at-least-once} et idempotence} --- Kafka garantit l'absence de perte au prix de re-livraisons possibles~; les consommateurs sont rendus idempotents.
+  \item \textbf{Dead Letter Topic} --- un message d\'efaillant est isol\'e sans bloquer le flux principal.
+  \item \textbf{\texttt{REPLICA IDENTITY FULL}} --- la table source fournit l'image compl\`ete \texttt{before}/\texttt{after} \`a Debezium.
+  \item \textbf{Snapshot initial puis streaming incr\'emental} --- Debezium reconstitue l'\'etat existant avant de basculer en capture continue.
+  \item \textbf{Architecture KRaft} --- Kafka fonctionne sans Zookeeper, r\'eduisant le nombre de composants.
+  \item \textbf{Cha\^ine de hachage} --- un registre d'int\'egrit\'e est constitu\'e sans recourir \`a une blockchain publique.
+  \item \textbf{Enveloppe d'\'ev\'enement Debezium} --- \texttt{before} / \texttt{after} / \texttt{op} / \texttt{ts\_ms} constituent le contrat d'\'echange, factoris\'e dans le module \texttt{common}.
+  \item \textbf{Extensibilit\'e} --- ajouter un septi\`eme service se fait sans toucher \`a l'existant.
+\end{itemize}
+
+%% ── CHAPITRE 7 ───────────────────────────────────────────────
+\chapter{Choix Technologiques Justifi\'es}
+
+\section{Stack Technique Impos\'ee}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\textwidth}{p{3.5cm}Xl}
+\toprule
+\textbf{Brique} & \textbf{Choix} & \textbf{Version} \\
+\midrule
+Langage backend        & Java (Eclipse Temurin)                                   & 21 LTS \\
+Build                  & Maven multi-module                                       & 3.9 \\
+Framework backend      & Spring Boot (spring-kafka, Data JPA, Web, Actuator, Validation) & 4.x \\
+Frontend               & Angular (derni\`ere version stable)                      & --- \\
+CDC                    & Debezium, connecteur PostgreSQL, plugin \texttt{pgoutput} & 3.5 \\
+Streaming              & Apache Kafka en mode KRaft                               & 4.1 \\
+Base de donn\'ees      & PostgreSQL (\texttt{wal\_level=logical}, \texttt{REPLICA IDENTITY FULL}) & 17 \\
+Stockage objet         & MinIO (compatible S3)                                    & latest \\
+SMTP de d\'eveloppement & MailHog                                                 & latest \\
+Observabilit\'e Kafka  & Kafbat UI                                                & latest \\
+Extraction de texte    & Apache Tika + tess4j (Tesseract)                         & --- \\
+Tests d'int\'egration  & Testcontainers (Postgres + Kafka \'eph\'em\`eres)        & --- \\
+Conteneurisation       & Docker / Docker Compose                                  & --- \\
+Int\'egration continue & GitHub Actions (\texttt{mvn verify} + badge README)      & --- \\
+\bottomrule
+\end{tabularx}
+\caption{Stack technique impos\'ee}
+\end{table}
+
+\section{Justification des D\'ecisions Structurantes}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\textwidth}{p{2.6cm}Xp{4.4cm}}
+\toprule
+\textbf{D\'ecision} & \textbf{Justification} & \textbf{Alternatives \'ecart\'ees} \\
+\midrule
+Kafka comme bus & Journal persistant, rejeu par offset, fan-out natif par consumer groups, forte r\'etention & \textbf{RabbitMQ}~: file consomm\'ee \`a la lecture, rejeu non natif, orient\'e routage plut\^ot que journal \\[4pt]
+Debezium (CDC log-based) & Non intrusif (lecture du WAL), capture \texttt{before}/\texttt{after}, aucune charge de polling, d\'etecte les suppressions & \textbf{Triggers}~: couplent le sch\'ema, surco\^ut d'\'ecriture~; \textbf{Polling}~: latence, charge, rate les DELETE \\[4pt]
+MinIO (Claim Check) & Fichiers hors base et hors Kafka, compatible S3, montable en volume Docker & \textbf{Colonne \texttt{bytea}}~: gonfle la base, alourdit le WAL et les \'ev\'enements Debezium, d\'egrade les performances \\[4pt]
+Cha\^ine de hachage & Int\'egrit\'e v\'erifiable, simple, sans co\^ut ni latence r\'eseau & \textbf{Blockchain publique}~: co\^ut, latence, complexit\'e inutile en contexte interne \\[4pt]
+Kafka KRaft & Un composant en moins, mode standard \`a partir de Kafka 4.x & \textbf{Zookeeper}~: d\'epr\'eci\'e, exploitation plus lourde \\[4pt]
+Spring Boot & \'Ecosyst\`eme Java entreprise mature, spring-kafka, alignement JEE avec l'encadrant & D\'eveloppement bas niveau avec le client Kafka natif, moins productif \\
+\bottomrule
+\end{tabularx}
+\caption{Justification des choix technologiques et alternatives \'ecart\'ees}
+\end{table}
+
+%% ── CHAPITRE 8 ───────────────────────────────────────────────
+\chapter{Mod\`ele de Donn\'ees}
+
+Le monorepo est organis\'e en modules Maven ind\'ependants~: \texttt{documents-api}, les cinq services consommateurs et un module \texttt{common} regroupant les DTO de l'enveloppe d'\'ev\'enement Debezium (\texttt{before} / \texttt{after} / \texttt{op} / \texttt{ts\_ms}). Chaque service consommateur poss\`ede son propre sch\'ema de persistance, conform\'ement au principe \emph{database per service}.
+
+\section{Table Source et Topic de Transport}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\textwidth}{p{3.6cm}Xp{3.6cm}}
+\toprule
+\textbf{Table / Topic} & \textbf{Attributs principaux} & \textbf{Remarques} \\
+\midrule
+\texttt{documents} (PostgreSQL, source) & \texttt{id}, \texttt{nom\_fichier}, \texttt{type\_mime}, \texttt{taille}, \texttt{bucket}, \texttt{objet\_cle} (cl\'e MinIO), \texttt{utilisateur}, \texttt{date\_depot}, \texttt{statut} & \texttt{REPLICA IDENTITY FULL}~; le binaire n'y figure pas \\[4pt]
+\texttt{documents} (topic Kafka) & Enveloppe Debezium~: \texttt{op}, \texttt{before}, \texttt{after}, \texttt{source} (LSN, \texttt{ts\_ms}) & Cl\'e = PK source, valeur JSON \\
+\bottomrule
+\end{tabularx}
+\caption{Table source \texttt{documents} et topic de transport}
+\end{table}
+
+\section{Tables des Services Consommateurs}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\textwidth}{p{3.3cm}Xp{3.2cm}}
+\toprule
+\textbf{Service / Table} & \textbf{Attributs principaux} & \textbf{R\^ole} \\
+\midrule
+audit-service \texttt{journal\_audit} & \texttt{id}, \texttt{id\_document}, \texttt{action}, \texttt{acteur}, \texttt{horodatage}, \texttt{details} & Tra\c{c}abilit\'e (qui, quoi, quand) \\[4pt]
+blockchain-service \texttt{chaine\_hachage} & \texttt{id}, \texttt{index}, \texttt{id\_document}, \texttt{hash\_document}, \texttt{hash\_precedent}, \texttt{hash\_chaine}, \texttt{horodatage} & Registre d'int\'egrit\'e cha\^in\'e \\[4pt]
+siem-service \texttt{evenement\_securite} & \texttt{id}, \texttt{id\_document}, \texttt{type}, \texttt{severite}, \texttt{regle\_declenchee}, \texttt{acteur}, \texttt{horodatage} & \'Ev\'enements et alertes de s\'ecurit\'e \\[4pt]
+ocr-service \texttt{texte\_extrait} & \texttt{id}, \texttt{id\_document}, \texttt{moteur} (tika/tesseract), \texttt{langue}, \texttt{contenu\_texte}, \texttt{nb\_caracteres}, \texttt{horodatage} & Texte extrait consultable \\[4pt]
+notification-service \texttt{journal\_notification} & \texttt{id}, \texttt{id\_document}, \texttt{destinataire}, \texttt{statut\_envoi}, \texttt{horodatage} & Trace des e-mails \'emis \\
+\bottomrule
+\end{tabularx}
+\caption{Mod\`ele de donn\'ees des cinq services consommateurs}
+\end{table}
+
+\begin{notebox}
+\textbf{Idempotence.} Chaque consommateur \'etant susceptible de recevoir un m\^eme \'ev\'enement plusieurs fois (\emph{at-least-once}), l'insertion est rendue idempotente par une contrainte d'unicit\'e sur la cl\'e naturelle (\texttt{id\_document} associ\'e \`a l'\texttt{offset}/\texttt{ts\_ms} de l'\'ev\'enement), coupl\'ee \`a un \emph{upsert}. Une re-livraison ne cr\'ee donc ni double audit, ni double hachage, ni double e-mail.
+\end{notebox}
+
+%% ── CHAPITRE 9 : MOD\'ELISATION UML ───────────────────────────
+\chapter{Mod\'elisation UML}
+\label{chap:uml}
+
+Ce chapitre compl\`ete l'architecture (chapitre~\ref{chap:archi}) et le mod\`ele de donn\'ees par trois vues UML compl\'ementaires~: le diagramme de cas d'usage (vue fonctionnelle), le diagramme de s\'equence du flux nominal (vue dynamique) et le mod\`ele de donn\'ees en notation entit\'e (vue statique).
+
+\section{Diagramme de Cas d'Usage}
+
+\begin{figure}[H]
+\centering
+\resizebox{0.92\textwidth}{!}{%
+\begin{tikzpicture}[
+  uc/.style={draw, ellipse, align=center, minimum width=4cm, minimum height=0.9cm, font=\small, inner sep=2pt},
+  assoc/.style={-, thick, black!60}
+]
+\tikzset{actor/.pic={
+  \draw[thick] (0,0) circle (2.6mm);
+  \draw[thick] (0,-0.26) -- (0,-1.05);
+  \draw[thick] (-0.4,-0.5) -- (0.4,-0.5);
+  \draw[thick] (0,-1.05) -- (-0.33,-1.55);
+  \draw[thick] (0,-1.05) -- (0.33,-1.55);
+}}
+
+% -- Fronti\`ere du syst\`eme --
+\draw[rounded corners, thick, draw=black!55] (3.3,1.4) rectangle (10.7,-9.9);
+\node[font=\bfseries] at (7,1.0) {Plateforme documentaire};
+
+% -- Cas d'usage --
+\node[uc] (u1) at (7,-0.4) {D\'eposer un document};
+\node[uc] (u2) at (7,-1.85) {Consulter la liste\\ et les statuts};
+\node[uc] (u3) at (7,-3.3) {V\'erifier l'int\'egrit\'e};
+\node[uc] (u4) at (7,-4.75) {Consulter le texte extrait};
+\node[uc] (u5) at (7,-6.2) {Consulter le journal d'audit};
+\node[uc] (u6) at (7,-7.65) {Consulter les alertes SIEM};
+\node[uc] (u7) at (7,-9.1) {Superviser \& rejouer\\ le pipeline};
+
+% -- Acteurs (gauche) --
+\pic at (0,-1.4) {actor};
+\node[font=\small, align=center] at (0,-3.2) {Utilisateur\\ d\'eposant};
+\coordinate (A1) at (0.4,-1.8);
+\pic at (0,-5.6) {actor};
+\node[font=\small, align=center] at (0,-7.4) {Auditeur /\\ Conformit\'e};
+\coordinate (A2) at (0.4,-6.0);
+\pic at (0,-8.6) {actor};
+\node[font=\small, align=center] at (0,-10.4) {Analyste\\ s\'ecurit\'e};
+\coordinate (A3) at (0.4,-9.0);
+% -- Acteur (droite) --
+\pic at (14,-8.0) {actor};
+\node[font=\small, align=center] at (14,-9.8) {Administrateur\\ technique};
+\coordinate (A4) at (13.6,-8.4);
+
+% -- Associations --
+\draw[assoc] (A1) -- (u1);
+\draw[assoc] (A1) -- (u2);
+\draw[assoc] (A1) -- (u3);
+\draw[assoc] (A1) -- (u4);
+\draw[assoc] (A2) -- (u5);
+\draw[assoc] (A3) -- (u6);
+\draw[assoc] (A4) -- (u7);
+\end{tikzpicture}%
+}
+\caption{Diagramme de cas d'usage de la plateforme}
+\end{figure}
+
+\section{Diagramme de S\'equence --- Flux Nominal}
+
+Le diagramme suivant d\'ecrit la s\'equence compl\`ete d'un d\'ep\^ot~: la phase synchrone (r\'eponse imm\'ediate \`a l'utilisateur) puis la phase asynchrone d\'eclench\'ee par le CDC et le fan-out.
+
+\begin{figure}[H]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[
+  >=Latex,
+  msg/.style={-{Latex[length=2mm]}, thick},
+  ret/.style={-{Latex[length=2mm]}, thick, dashed},
+  ll/.style={draw, fill=black!3, minimum height=0.85cm, align=center, font=\small},
+  lab/.style={font=\scriptsize, fill=white, inner sep=1.5pt}
+]
+% -- En-t\^etes des lignes de vie --
+\node[ll] (aH)  at (0,0)    {Angular\\ (SPA)};
+\node[ll] (pH)  at (3,0)    {documents-api};
+\node[ll] (dbH) at (6,0)    {PostgreSQL};
+\node[ll] (mH)  at (9,0)    {MinIO};
+\node[ll] (deH) at (12,0)   {Debezium};
+\node[ll] (kH)  at (15,0)   {Kafka};
+\node[ll] (cH)  at (18.5,0) {5 consommateurs\\ (fan-out)};
+\node[ll] (moH) at (22,0)   {MailHog};
+% -- Lignes de vie --
+\foreach \n in {aH,pH,dbH,mH,deH,kH,cH,moH}{\draw[dashed, black!45] (\n.south) -- ++(0,-11);}
+
+% -- Phase synchrone --
+\draw[msg] (0,-1) -- node[lab]{1: upload multipart} (3,-1);
+\draw[msg] (3,-2) -- node[lab]{2a: INSERT m\'etadonn\'ees} (6,-2);
+\draw[msg] (3,-3) -- node[lab]{2b: PUT fichier (Claim Check)} (9,-3);
+\draw[ret] (3,-4) -- node[lab]{201 Created (r\'ef\'erence)} (0,-4);
+
+% -- S\'eparateur asynchrone --
+\draw[dashed, black!45] (-0.7,-4.8) -- (22.7,-4.8);
+\node[font=\scriptsize\itshape, fill=white, inner sep=1.5pt] at (11,-4.8) {traitement asynchrone (CDC / fan-out)};
+
+% -- Phase asynchrone --
+\draw[msg] (6,-5.6)  -- node[lab]{3: lecture du WAL} (12,-5.6);
+\draw[msg] (12,-6.6) -- node[lab]{4: publie l'\'ev\'enement} (15,-6.6);
+\draw[msg] (15,-7.6) -- node[lab]{5: fan-out (5 groupes)} (18.5,-7.6);
+\draw[msg] (18.5,-8.6) -- node[lab]{6: e-mail (notification)} (22,-8.6);
+\draw[msg] (18.5,-9.6) -- node[lab]{lit le fichier (OCR)} (9,-9.6);
+\end{tikzpicture}%
+}
+\caption{Diagramme de s\'equence du flux nominal (d\'ep\^ot d'un document)}
+\end{figure}
+
+\section{Mod\`ele de Donn\'ees --- Vue Entit\'es}
+
+\begin{figure}[H]
+\centering
+\resizebox{0.95\textwidth}{!}{%
+\begin{tikzpicture}[
+  class/.style={draw, thick, rectangle split, rectangle split parts=2,
+                align=left, font=\small, text width=3.9cm, inner sep=3pt},
+  rel/.style={-, thick, dashed, black!60},
+  rlab/.style={font=\scriptsize, fill=white, inner sep=1pt}
+]
+\node[class] (doc) at (0,0) {\textbf{documents}
+  \nodepart{second}\underline{id}\\ nom\_fichier\\ type\_mime\\ taille\\ bucket\\ objet\_cle\\ utilisateur\\ date\_depot\\ statut};
+\node[class] (notif) at (-7.5,3.6) {\textbf{journal\_notification}
+  \nodepart{second}\underline{id}\\ id\_document\\ destinataire\\ statut\_envoi\\ horodatage};
+\node[class] (ocr) at (-7.5,-2.6) {\textbf{texte\_extrait}
+  \nodepart{second}\underline{id}\\ id\_document\\ moteur\\ langue\\ contenu\_texte\\ nb\_caracteres\\ horodatage};
+\node[class] (aud) at (7.5,3.6) {\textbf{journal\_audit}
+  \nodepart{second}\underline{id}\\ id\_document\\ action\\ acteur\\ horodatage\\ details};
+\node[class] (hash) at (7.5,-1.0) {\textbf{chaine\_hachage}
+  \nodepart{second}\underline{id}\\ index\\ id\_document\\ hash\_document\\ hash\_precedent\\ hash\_chaine\\ horodatage};
+\node[class] (siem) at (0,-5.6) {\textbf{evenement\_securite}
+  \nodepart{second}\underline{id}\\ id\_document\\ type\\ severite\\ regle\_declenchee\\ acteur\\ horodatage};
+
+\draw[rel] (doc) -- node[rlab]{1..*} (notif);
+\draw[rel] (doc) -- node[rlab]{1..*} (ocr);
+\draw[rel] (doc) -- node[rlab]{1..*} (aud);
+\draw[rel] (doc) -- node[rlab]{1..*} (hash);
+\draw[rel] (doc) -- node[rlab]{1..*} (siem);
+\end{tikzpicture}%
+}
+\caption{Mod\`ele de donn\'ees~: table source \texttt{documents} et tables des cinq services (r\'ef\'erence logique par \texttt{id\_document})}
+\end{figure}
+
+\begin{notebox}
+\textbf{Base par service.} Chaque service consommateur poss\`ede son propre sch\'ema~; le lien vers \texttt{documents} est une \textbf{r\'ef\'erence logique} par \texttt{id\_document}, et non une cl\'e \'etrang\`ere physique inter-bases, conform\'ement au principe \emph{database per service}. Les traits en pointill\'es traduisent ce couplage faible.
+\end{notebox}
+
+%% ── CHAPITRE 10 : M\'ETHODOLOGIE ET PLANNING ──────────────────
+\chapter{M\'ethodologie et Planning de R\'ealisation}
+\label{chap:planning}
+
+\section{M\'ethodologie}
+
+Le projet est conduit de mani\`ere incr\'ementale sur cinq semaines, du [date de d\'ebut] au [date de fin]. Chaque semaine produit un incr\'ement d\'emontrable et se cl\^ot par un \textbf{jalon v\'erifiable}. L'ordre des semaines respecte les d\'ependances techniques~: le socle CDC pr\'ec\`ede le producteur, qui pr\'ec\`ede les consommateurs, eux-m\^emes pr\'ec\'edant le frontend et la consolidation. Les semaines ne doivent pas \^etre saut\'ees.
+
+\section{Planning D\'etaill\'e sur Cinq Semaines}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\textwidth}{p{1.1cm}Xp{5.1cm}}
+\toprule
+\textbf{Sem.} & \textbf{T\^aches principales} & \textbf{Jalon v\'erifiable} \\
+\midrule
+S1 & Infrastructure et socle CDC~: Docker Compose complet (PostgreSQL \texttt{wal\_level=logical}, Kafka KRaft, Kafka Connect + Debezium, MinIO, MailHog, Kafbat UI), table \texttt{documents} via \texttt{init.sql}, enregistrement du connecteur Debezium, squelette du monorepo Maven, CI GitHub Actions & Un \texttt{INSERT} manuel dans \texttt{documents} produit un \'ev\'enement visible dans Kafbat UI \\[4pt]
+S2 & Producteur et premier consommateur~: \texttt{documents-api} (upload multipart, m\'etadonn\'ees $\rightarrow$ PostgreSQL, fichier $\rightarrow$ MinIO, endpoints Swagger), module \texttt{common} (d\'es\'erialisation de l'enveloppe Debezium), \texttt{audit-service} complet & Un upload via l'API cr\'ee automatiquement une ligne d'audit, sans aucun appel direct entre les deux services \\[4pt]
+S3 & Fan-out des services l\'egers~: \texttt{notification-service} (MailHog), \texttt{blockchain-service} (hachage + cha\^inage + v\'erification), \texttt{siem-service} (trois r\`egles), consumer groups distincts, gestion d'erreurs par Dead Letter Topic & Un seul upload d\'eclenche quatre services en parall\`ele~; un message invalide part en DLT sans bloquer le pipeline \\[4pt]
+S4 & OCR et frontend~: \texttt{ocr-service} (r\'ecup\'eration depuis MinIO, extraction Tika, Tesseract si le temps le permet, texte consultable), application Angular (d\'ep\^ot drag \& drop, liste des documents avec statuts, page audit) & D\'emonstration compl\`ete pilot\'ee depuis le navigateur \\[4pt]
+S5 & Consolidation~: tests d'int\'egration Testcontainers de bout en bout, g\'en\'erateur de donn\'ees pour la d\'emo, s\'ecurit\'e JWT (si le temps le permet), README et diagrammes finaux, r\'ep\'etition du sc\'enario. Semaine tampon pour absorber les retards & Sc\'enario de d\'emonstration r\'ep\'et\'e avec succ\`es et documentation finalis\'ee \\
+\bottomrule
+\end{tabularx}
+\caption{Planning d\'etaill\'e des cinq semaines}
+\end{table}
+
+\section{Diagramme de Gantt}
+
+\begin{figure}[H]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{ganttchart}[
+  vgrid, hgrid,
+  x unit=2.3cm,
+  y unit chart=0.62cm,
+  y unit title=0.62cm,
+  bar height=0.6,
+  title label font=\small\bfseries,
+  bar label font=\small,
+  milestone label font=\footnotesize\itshape
+]{1}{5}
+\gantttitle{Planning de r\'ealisation --- 5 semaines}{5} \\
+\gantttitlelist{1,...,5}{1} \\
+\ganttbar{S1 --- Infrastructure \& socle CDC}{1}{1} \\
+\ganttbar{S2 --- Producteur + audit-service}{2}{2} \\
+\ganttbar{S3 --- Fan-out des services l\'egers}{3}{3} \\
+\ganttbar{S4 --- OCR + frontend Angular}{4}{4} \\
+\ganttbar{S5 --- Tests, s\'ecurit\'e \& soutenance}{5}{5} \\
+\ganttmilestone{Jalon S1}{1} \\
+\ganttmilestone{Jalon S2}{2} \\
+\ganttmilestone{Jalon S3}{3} \\
+\ganttmilestone{Jalon S4}{4} \\
+\ganttmilestone{Jalon S5}{5}
+\end{ganttchart}%
+}
+\caption{Diagramme de Gantt du plan de r\'ealisation}
+\end{figure}
+
+\section{Variante \`a Quatre Semaines}
+
+En cas de contrainte de calendrier, la semaine~5 est fusionn\'ee dans les semaines~3 et~4. Les \'el\'ements suivants passent alors en \textbf{perspectives}~: extraction de texte des images par Tesseract, authentification JWT, et tests d'int\'egration Testcontainers. Le c\oe ur du pipeline (CDC, fan-out, Claim Check, DLT, cha\^ine de hachage, OCR par Tika) reste int\'egralement couvert.
+
+%% ── CHAPITRE 11 ──────────────────────────────────────────────
+\chapter{Livrables}
+
+\begin{table}[H]
+\centering
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+\textbf{Livrable} & \textbf{Description} \\
+\midrule
+Monorepo Maven & Modules \texttt{documents-api}, \texttt{audit-service}, \texttt{notification-service}, \texttt{blockchain-service}, \texttt{ocr-service}, \texttt{siem-service} et \texttt{common} \\
+Infrastructure & \texttt{docker-compose.yml} complet, \texttt{init.sql} (table \texttt{documents}), configuration du connecteur Debezium (JSON) \\
+Frontend & Application Angular (d\'ep\^ot drag \& drop, liste des documents avec statuts, page audit) \\
+Int\'egration continue & Workflow GitHub Actions (\texttt{mvn verify}) et badge de statut dans le README \\
+Documentation & Ce cahier des charges, le README, les diagrammes d'architecture et le mod\`ele de donn\'ees \\
+D\'emonstration & Sc\'enario reproductible de bout en bout et g\'en\'erateur de donn\'ees pour la d\'emo live \\
+Tests & Tests unitaires (JUnit 5) et tests d'int\'egration Testcontainers \\
+\bottomrule
+\end{tabularx}
+\caption{Livrables du projet}
+\end{table}
+
+%% ── CHAPITRE 12 ──────────────────────────────────────────────
+\chapter{Crit\`eres d'Acceptation et Sc\'enario de D\'emonstration}
+
+\section{Crit\`eres d'Acceptation}
+
+\begin{longtable}{p{1.2cm}p{5.4cm}p{5cm}p{1.3cm}}
+  \toprule
+  \textbf{Test} & \textbf{Sc\'enario} & \textbf{R\'esultat attendu} & \textbf{Statut} \\
+  \midrule
+  \endhead
+  \bottomrule
+  \endfoot
+
+  CA-01 & D\'emarrage complet via \texttt{docker compose up} + enregistrement du connecteur & Conteneurs sains, connecteur au statut \texttt{RUNNING} & \`A tester \\[4pt]
+  CA-02 & \texttt{INSERT} manuel dans \texttt{documents} & \'Ev\'enement visible dans Kafbat UI (jalon S1) & \`A tester \\[4pt]
+  CA-03 & Upload d'un document via l'API & M\'etadonn\'ees en base, fichier dans MinIO, ligne d'audit cr\'e\'ee sans appel direct (jalon S2) & \`A tester \\[4pt]
+  CA-04 & Upload unique & Quatre services d\'eclench\'es en parall\`ele (jalon S3) & \`A tester \\[4pt]
+  CA-05 & Message invalide inject\'e sur le topic & Message redirig\'e vers le DLT, flux principal non bloqu\'e & \`A tester \\[4pt]
+  CA-06 & Appel de l'endpoint de v\'erification d'int\'egrit\'e & Cha\^ine de hachage recalcul\'ee et coh\'erente & \`A tester \\[4pt]
+  CA-07 & D\'ep\^ots r\'ep\'et\'es hors plage horaire autoris\'ee & Alerte SIEM d\'eclench\'ee volontairement & \`A tester \\[4pt]
+  CA-08 & Red\'emarrage d'un consommateur en cours de traitement & Aucun \'ev\'enement perdu, aucun doublon apr\`es reprise & \`A tester \\
+\end{longtable}
+
+\begin{table}[H]
+\centering
+\begin{tabularx}{\textwidth}{p{1.5cm}Xp{2.6cm}}
+\toprule
+\textbf{Test} & \textbf{Crit\`ere non-fonctionnel et protocole} & \textbf{Statut} \\
+\midrule
+CAN-01 & Latence upload $\rightarrow$ e-mail dans MailHog $<$ 5\,s (p95). \textit{Horodater l'upload et l'arriv\'ee du mail, r\'ep\'eter [N] fois, retenir le p95.} & \`A mesurer \\
+CAN-02 & Idempotence sous re-livraison. \textit{Rejouer un m\^eme \'ev\'enement et v\'erifier l'absence de doublon.} & \`A tester \\
+CAN-03 & Build sans erreur. \textit{\texttt{mvn clean verify}.} & \`A tester \\
+\bottomrule
+\end{tabularx}
+\caption{Crit\`eres d'acceptation non-fonctionnels}
+\end{table}
+
+\section{Sc\'enario de D\'emonstration}
+
+\begin{enumerate}
+  \item \textbf{D\'ep\^ot} --- depuis le navigateur, l'utilisateur d\'epose un document PDF via l'interface Angular (drag \& drop).
+  \item \textbf{\'Ev\'enement CDC} --- l'\'ev\'enement correspondant appara\^it dans Kafbat UI sur le topic \texttt{documents}.
+  \item \textbf{Notification} --- l'e-mail de confirmation appara\^it dans l'interface MailHog en moins de 5\,secondes.
+  \item \textbf{Int\'egrit\'e} --- l'appel \`a l'endpoint de v\'erification confirme que le hachage du document s'inscrit correctement dans la cha\^ine.
+  \item \textbf{Audit et OCR} --- la ligne d'audit et le texte extrait sont consultables dans le frontend.
+  \item \textbf{Alerte SIEM} --- on d\'eclenche volontairement une r\`egle (par exemple une rafale de d\'ep\^ots ou une extension suspecte)~; l'alerte de s\'ecurit\'e correspondante appara\^it.
+\end{enumerate}
+
+%% ── CHAPITRE 13 ──────────────────────────────────────────────
+\chapter{Analyse des Risques}
+
+\begin{longtable}{p{4cm}p{2.4cm}p{1.6cm}p{4.6cm}}
+  \toprule
+  \textbf{Risque} & \textbf{Impact} & \textbf{Prob.} & \textbf{Mitigation} \\
+  \midrule
+  \endhead
+  \bottomrule
+  \endfoot
+
+  Retard sur l'OCR (configuration Tesseract/tess4j, biblioth\`eques natives) & Fonctionnalit\'e OCR partielle & Moyenne & Traiter d'abord Tika (PDF/DOCX)~; Tesseract en option de S4, sinon perspective \\[4pt]
+  Complexit\'e multi-services (six microservices) & Charge de mise en \oe uvre \'elev\'ee & Moyenne & Monorepo Maven + module \texttt{common}, d\'emarrage orchestr\'e par Compose, semaine~5 tampon \\[4pt]
+  Courbe d'apprentissage Kafka / Debezium & Retard sur le socle & \'Elev\'ee & Semaine~1 d\'edi\'ee au socle avec jalon v\'erifiable, documentation officielle \\[4pt]
+  Configuration \texttt{wal\_level} et r\'eplication logique PostgreSQL & Capture CDC inop\'erante & Moyenne & \texttt{init.sql} versionn\'e, \texttt{REPLICA IDENTITY FULL}, validation d\`es S1 \\[4pt]
+  Doublons li\'es au \emph{at-least-once} & Incoh\'erence des donn\'ees consommateurs & Moyenne & Idempotence par cl\'e naturelle + \emph{upsert} (cf.~\S\ref{sec:fiabilite}) \\[4pt]
+  Charge de la machine locale (six services + infra) & Lenteurs, instabilit\'e & Moyenne & Limites m\'emoire Docker, d\'emarrage s\'electif des services, profils Compose \\
+\end{longtable}
+
+%% ── CHAPITRE 14 ──────────────────────────────────────────────
+\chapter{Contraintes}
+
+\section{Contraintes Techniques}
+
+\begin{itemize}
+  \item La stack impos\'ee (chapitre~7) ne doit pas \^etre modifi\'ee~: Java~21, Spring Boot~4.x, Debezium~3.5, Kafka~4.1 (KRaft), PostgreSQL~17.
+  \item PostgreSQL doit \^etre d\'emarr\'e avec \texttt{wal\_level=logical} et des \texttt{max\_replication\_slots}/\texttt{max\_wal\_senders} suffisants pour Debezium.
+  \item La table \texttt{documents} doit \^etre configur\'ee en \texttt{REPLICA IDENTITY FULL}.
+  \item Le fichier binaire ne doit jamais transiter par Kafka ni \^etre stock\'e en base (\emph{Claim Check} via MinIO).
+  \item Debezium est configur\'e, non cod\'e~: il s'agit uniquement d'un connecteur d\'ecrit en JSON.
+  \item Aucun secret ne doit appara\^itre en dur~; les identifiants transitent par les variables d'environnement.
+\end{itemize}
+
+\section{Contraintes Temporelles}
+
+\begin{itemize}
+  \item La r\'ealisation est born\'ee \`a \textbf{cinq semaines}, du [date de d\'ebut] au [date de fin], avec un jalon v\'erifiable par semaine.
+  \item Les semaines doivent \^etre trait\'ees dans l'ordre, sans en sauter~; la semaine~5 sert de tampon.
+\end{itemize}
+
+\section{Contraintes Mat\'erielles}
+
+\begin{itemize}
+  \item L'ex\'ecution est \textbf{100\,\% locale} via Docker Compose, sur une seule machine de d\'eveloppement.
+  \item Les ports de d\'eveloppement sont fix\'es pour faciliter la d\'emonstration~: \texttt{documents-api} (8080), Kafka Connect (8083), Kafbat UI (8090), MinIO (9000/9001), MailHog (8025/1025), PostgreSQL (5432).
+\end{itemize}
+
+%% ── CHAPITRE 15 ──────────────────────────────────────────────
+\chapter{Glossaire}
+
+\begin{longtable}{lp{10cm}}
+  \toprule
+  \textbf{Terme} & \textbf{D\'efinition} \\
+  \midrule
+  \endhead
+  \bottomrule
+  \endfoot
+
+  CDC & \textit{Change Data Capture} --- capture et propagation continues des changements d'une base vers des syst\`emes tiers, ici bas\'ees sur les logs de transaction. \\[4pt]
+  WAL & \textit{Write-Ahead Log} --- journal de transactions de PostgreSQL, source de la capture logique. \\[4pt]
+  R\'eplication logique & D\'ecodage du WAL en un flux de changements exploitables (via \texttt{pgoutput}), sans copie physique des fichiers de la base. \\[4pt]
+  KRaft & Mode o\`u le consensus du cluster Kafka est g\'er\'e en interne (\textit{Kafka Raft}), supprimant la d\'ependance \`a Zookeeper. \\[4pt]
+  Consumer group & Groupe de consommateurs partageant un identifiant~; chaque groupe re\c{c}oit sa propre copie du flux, ce qui permet le fan-out. \\[4pt]
+  Fan-out & Diffusion d'un m\^eme \'ev\'enement \`a plusieurs consommateurs ind\'ependants, ici les cinq services. \\[4pt]
+  Claim Check & Motif o\`u le contenu volumineux (le fichier) est stock\'e \`a part (MinIO) et seul un jeton/r\'ef\'erence circule dans le pipeline. \\[4pt]
+  DLT & \textit{Dead Letter Topic} --- topic de secours recevant les messages dont le traitement a \'echou\'e, afin de ne pas bloquer le flux principal. \\[4pt]
+  Offset & Position de lecture d'un consommateur dans une partition Kafka, permettant la reprise et le rejeu. \\[4pt]
+  Snapshot & Capture initiale de l'\'etat existant d'une table par Debezium, avant le passage en streaming incr\'emental. \\[4pt]
+  Idempotence & Propri\'et\'e garantissant qu'un traitement r\'ep\'et\'e produit le m\^eme r\'esultat qu'une seule ex\'ecution~; indispensable en \textit{at-least-once}. \\[4pt]
+  SIEM & \textit{Security Information and Event Management} --- collecte et corr\'elation d'\'ev\'enements de s\'ecurit\'e~; ici un moteur \`a r\`egles d\'etectant les comportements anormaux. \\[4pt]
+  OCR & \textit{Optical Character Recognition} --- extraction du texte d'un document, ici via Apache Tika et Tesseract. \\[4pt]
+  Enveloppe Debezium & Structure d'un \'ev\'enement CDC~: \texttt{before}, \texttt{after}, \texttt{op} (c/u/d) et \texttt{ts\_ms}. \\[4pt]
+  MoSCoW & M\'ethode de priorisation~: \textit{Must}, \textit{Should}, \textit{Could}, \textit{Won't Have (for now)}. \\
+\end{longtable}
+
+%% ── ANNEXE : CHECKLIST DES PLACEHOLDERS ──────────────────────
+\chapter*{Checklist des Placeholders \`a Remplir}
+\addcontentsline{toc}{chapter}{Checklist des Placeholders \`a Remplir}
+
+Avant remise \`a l'encadrant, remplacer les \'el\'ements entre crochets~:
+
+\begin{itemize}[leftmargin=2.2em]
+  \item[$\square$] \textbf{[date de d\'ebut]} et \textbf{[date de fin]} du projet (5 semaines) --- fiche du document, chapitre~\ref{chap:planning} (planning), contraintes.
+  \item[$\square$] \textbf{[JJ/MM/AAAA]} --- date de r\'edaction dans la fiche du document.
+  \item[$\square$] \textbf{[N]} --- cible de d\'ebit (d\'ep\^ots/minute) de RNF-07 et nombre de r\'ep\'etitions de CAN-01.
+  \item[$\square$] Seuils exacts des \textbf{trois r\`egles SIEM}~: fr\'equence de d\'ep\^ots (nombre / fen\^etre), plage horaire autoris\'ee, liste des extensions suspectes.
+  \item[$\square$] Version exacte d'\textbf{Angular} retenue (tableau de la stack).
+  \item[$\square$] V\'erifier l'orthographe du nom de l'\'etudiant (\og Lazim Wassim \fg{}) et de l'encadrant professionnel (\og Bekkali Mohamed \fg{}).
+  \item[$\square$] Confirmer la graphie exacte de l'organisme d'accueil (\og 6Solutions \fg{}) et v\'erifier que le fichier \texttt{logo-6solutions} est bien plac\'e \`a la racine du projet Overleaf.
+  \item[$\square$] Confirmer le nom du d\'ep\^ot Git (\texttt{cdc-streaming-pipeline}) et la pr\'esence de \texttt{logo.png} \`a la racine du projet Overleaf.
+  \item[$\square$] D\'ecider si Tesseract, JWT et Testcontainers restent dans le p\'erim\`etre 5~semaines ou passent en perspectives (variante 4~semaines).
+\end{itemize}
+
+%% ── FIN DU DOCUMENT ──────────────────────────────────────────
+\end{document}

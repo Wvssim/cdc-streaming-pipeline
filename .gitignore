@@ -4,3 +4,5 @@
 
 # Fichiers d'assistance locale, non versionnes
 CLAUDE.md
+CLAUDE.local.md
+.claude/
