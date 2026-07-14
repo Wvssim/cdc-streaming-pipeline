@@ -2,6 +2,9 @@
 *.iml
 .DS_Store
 
+# Build Maven
+target/
+
 # Fichiers d'assistance locale, non versionnes
 CLAUDE.md
 CLAUDE.local.md
