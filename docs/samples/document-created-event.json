@@ -1,0 +1,278 @@
+{
+    "schema": {
+        "type": "struct",
+        "fields": [
+            {
+                "type": "struct",
+                "fields": [
+                    {
+                        "type": "int64",
+                        "optional": false,
+                        "default": 0,
+                        "field": "id"
+                    },
+                    {
+                        "type": "string",
+                        "optional": false,
+                        "field": "filename"
+                    },
+                    {
+                        "type": "string",
+                        "optional": false,
+                        "field": "content_type"
+                    },
+                    {
+                        "type": "int64",
+                        "optional": false,
+                        "field": "size"
+                    },
+                    {
+                        "type": "string",
+                        "optional": false,
+                        "field": "storage_key"
+                    },
+                    {
+                        "type": "string",
+                        "optional": false,
+                        "field": "uploaded_by"
+                    },
+                    {
+                        "type": "string",
+                        "optional": false,
+                        "name": "io.debezium.time.ZonedTimestamp",
+                        "version": 1,
+                        "default": "1970-01-01T00:00:00.000000Z",
+                        "field": "uploaded_at"
+                    }
+                ],
+                "optional": true,
+                "name": "docs.public.documents.Value",
+                "field": "before"
+            },
+            {
+                "type": "struct",
+                "fields": [
+                    {
+                        "type": "int64",
+                        "optional": false,
+                        "default": 0,
+                        "field": "id"
+                    },
+                    {
+                        "type": "string",
+                        "optional": false,
+                        "field": "filename"
+                    },
+                    {
+                        "type": "string",
+                        "optional": false,
+                        "field": "content_type"
+                    },
+                    {
+                        "type": "int64",
+                        "optional": false,
+                        "field": "size"
+                    },
+                    {
+                        "type": "string",
+                        "optional": false,
+                        "field": "storage_key"
+                    },
+                    {
+                        "type": "string",
+                        "optional": false,
+                        "field": "uploaded_by"
+                    },
+                    {
+                        "type": "string",
+                        "optional": false,
+                        "name": "io.debezium.time.ZonedTimestamp",
+                        "version": 1,
+                        "default": "1970-01-01T00:00:00.000000Z",
+                        "field": "uploaded_at"
+                    }
+                ],
+                "optional": true,
+                "name": "docs.public.documents.Value",
+                "field": "after"
+            },
+            {
+                "type": "struct",
+                "fields": [
+                    {
+                        "type": "string",
+                        "optional": false,
+                        "field": "version"
+                    },
+                    {
+                        "type": "string",
+                        "optional": false,
+                        "field": "connector"
+                    },
+                    {
+                        "type": "string",
+                        "optional": false,
+                        "field": "name"
+                    },
+                    {
+                        "type": "int64",
+                        "optional": false,
+                        "field": "ts_ms"
+                    },
+                    {
+                        "type": "string",
+                        "optional": true,
+                        "name": "io.debezium.data.Enum",
+                        "version": 1,
+                        "parameters": {
+                            "allowed": "true,first,first_in_data_collection,last_in_data_collection,last,false,incremental"
+                        },
+                        "default": "false",
+                        "field": "snapshot"
+                    },
+                    {
+                        "type": "string",
+                        "optional": false,
+                        "field": "db"
+                    },
+                    {
+                        "type": "string",
+                        "optional": true,
+                        "field": "sequence"
+                    },
+                    {
+                        "type": "int64",
+                        "optional": true,
+                        "field": "ts_us"
+                    },
+                    {
+                        "type": "int64",
+                        "optional": true,
+                        "field": "ts_ns"
+                    },
+                    {
+                        "type": "string",
+                        "optional": false,
+                        "field": "schema"
+                    },
+                    {
+                        "type": "string",
+                        "optional": false,
+                        "field": "table"
+                    },
+                    {
+                        "type": "int64",
+                        "optional": true,
+                        "field": "txId"
+                    },
+                    {
+                        "type": "int64",
+                        "optional": true,
+                        "field": "lsn"
+                    },
+                    {
+                        "type": "int64",
+                        "optional": true,
+                        "field": "xmin"
+                    },
+                    {
+                        "type": "string",
+                        "optional": true,
+                        "field": "origin"
+                    },
+                    {
+                        "type": "int64",
+                        "optional": true,
+                        "field": "origin_lsn"
+                    }
+                ],
+                "optional": false,
+                "name": "io.debezium.connector.postgresql.Source",
+                "version": 1,
+                "field": "source"
+            },
+            {
+                "type": "struct",
+                "fields": [
+                    {
+                        "type": "string",
+                        "optional": false,
+                        "field": "id"
+                    },
+                    {
+                        "type": "int64",
+                        "optional": false,
+                        "field": "total_order"
+                    },
+                    {
+                        "type": "int64",
+                        "optional": false,
+                        "field": "data_collection_order"
+                    }
+                ],
+                "optional": true,
+                "name": "event.block",
+                "version": 1,
+                "field": "transaction"
+            },
+            {
+                "type": "string",
+                "optional": false,
+                "field": "op"
+            },
+            {
+                "type": "int64",
+                "optional": true,
+                "field": "ts_ms"
+            },
+            {
+                "type": "int64",
+                "optional": true,
+                "field": "ts_us"
+            },
+            {
+                "type": "int64",
+                "optional": true,
+                "field": "ts_ns"
+            }
+        ],
+        "optional": false,
+        "name": "docs.public.documents.Envelope",
+        "version": 2
+    },
+    "payload": {
+        "before": null,
+        "after": {
+            "id": 1,
+            "filename": "test.pdf",
+            "content_type": "application/pdf",
+            "size": 1024,
+            "storage_key": "test-key",
+            "uploaded_by": "wassim",
+            "uploaded_at": "2026-07-13T23:13:38.259466Z"
+        },
+        "source": {
+            "version": "3.5.2.Final",
+            "connector": "postgresql",
+            "name": "docs",
+            "ts_ms": 1783984418262,
+            "snapshot": "false",
+            "db": "docdb",
+            "sequence": "[null,\"26767256\"]",
+            "ts_us": 1783984418262252,
+            "ts_ns": 1783984418262252000,
+            "schema": "public",
+            "table": "documents",
+            "txId": 765,
+            "lsn": 26767256,
+            "xmin": null,
+            "origin": null,
+            "origin_lsn": null
+        },
+        "transaction": null,
+        "op": "c",
+        "ts_ms": 1783984418505,
+        "ts_us": 1783984418505620,
+        "ts_ns": 1783984418505620075
+    }
+}
