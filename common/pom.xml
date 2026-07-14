@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>ma.wvssim</groupId>
+        <artifactId>cdc-streaming-pipeline</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>common</artifactId>
+    <name>common</name>
+    <description>Types partages : enveloppe d'evenement Debezium (before/after/op/ts_ms) + deserialisation</description>
+
+    <!--
+      Squelette S2. Les dependances (jackson-databind, lombok) et le code (DTO de l'enveloppe)
+      arrivent en S3 (tache T3.1), a partir de la fixture docs/samples/document-created-event.json.
+    -->
+
+</project>

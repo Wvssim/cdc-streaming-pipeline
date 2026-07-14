@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- Hérite du BOM Spring Boot : gère les versions des dépendances communes -->
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>4.1.0</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>ma.wvssim</groupId>
+    <artifactId>cdc-streaming-pipeline</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
+    <name>cdc-streaming-pipeline</name>
+    <description>Plateforme documentaire evenementielle - pipeline CDC (parent multi-module)</description>
+
+    <properties>
+        <java.version>21</java.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <!--
+      Seul 'common' existe pour l'instant. Les 6 services (documents-api, audit-service,
+      notification-service, blockchain-service, ocr-service, siem-service) naissent
+      quand on les code (S3 a S5) : on ne cree pas de module vide en avance.
+    -->
+    <modules>
+        <module>common</module>
+    </modules>
+
+</project>
