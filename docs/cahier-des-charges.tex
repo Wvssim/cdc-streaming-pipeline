@@ -600,6 +600,20 @@ Spring Boot & \'Ecosyst\`eme Java entreprise mature, spring-kafka, alignement JE
 \caption{Justification des choix technologiques et alternatives \'ecart\'ees}
 \end{table}
 
+\section{Spring Boot plut\^ot que Quarkus}
+
+Le choix de Spring Boot m\'erite d'\^etre explicit\'e, car Quarkus est un candidat s\'erieux pour ce type de projet. Il ne s'agit pas d'une sup\'eriorit\'e technique~: sur plusieurs crit\`eres, Quarkus est objectivement excellent --- d\'emarrage quasi instantan\'e, empreinte m\'emoire nettement plus faible (un atout r\'eel lorsque six services tournent sur une seule machine de d\'eveloppement), compilation native GraalVM, et support de Debezium en mode embarqu\'e.
+
+Le d\'epartage ne s'est donc pas fait sur la technique, mais sur trois raisons de contexte, assum\'ees comme telles~:
+
+\begin{itemize}[noitemsep]
+  \item \textbf{\'Ecosyst\`eme} --- \texttt{spring-kafka} et Spring Data JPA sont matures et largement \'eprouv\'es~; ils couvrent nativement les besoins du projet (\texttt{@KafkaListener}, consumer groups, \texttt{DefaultErrorHandler} et \texttt{DeadLetterPublishingRecoverer} pour le \emph{Dead Letter Topic}).
+  \item \textbf{Documentation et communaut\'e} --- le volume de ressources disponibles r\'eduit le risque de blocage, crit\`ere d\'eterminant pour un projet men\'e seul dans un temps contraint.
+  \item \textbf{Alignement p\'edagogique} --- Spring Boot~4.x repose sur la baseline Jakarta~EE~11 et correspond \`a l'enseignement JEE de la fili\`ere comme \`a la sp\'ecialit\'e de l'encadrant.
+\end{itemize}
+
+Quarkus resterait un choix pertinent, en particulier si le temps de d\'emarrage ou l'empreinte m\'emoire devenaient des contraintes de premier plan.
+
 %% ── CHAPITRE 8 ───────────────────────────────────────────────
 \chapter{Mod\`ele de Donn\'ees}
 
