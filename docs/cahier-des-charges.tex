@@ -385,7 +385,7 @@ Les besoins non-fonctionnels sont identifi\'es par des codes \textbf{RNF-XX}. Il
   \endfoot
 
   RNF-01 & Livraison \emph{at-least-once} entre Debezium et les consommateurs~; aucun \'ev\'enement perdu, m\^eme apr\`es red\'emarrage d'un consommateur & Kafka (r\'eplication, accus\'es de r\'eception), offsets Kafka Connect \\[4pt]
-  RNF-02 & Idempotence de chaque consommateur~: une re-livraison ne produit ni double audit, ni double hachage, ni double e-mail & Cl\'e naturelle (\texttt{id\_document} + \texttt{ts\_ms}/offset) + \emph{upsert} \\[4pt]
+  RNF-02 & Idempotence de chaque consommateur~: une re-livraison ne produit ni double audit, ni double hachage, ni double e-mail & Cl\'e de d\'eduplication port\'ee par le sch\'ema (\texttt{event\_id}, ou \texttt{doc\_id} selon la table) + \emph{upsert} \\[4pt]
   RNF-03 & Un message invalide part en \emph{Dead Letter Topic} sans bloquer le flux principal & \texttt{DefaultErrorHandler} + \texttt{DeadLetterPublishingRecoverer} \\[4pt]
   RNF-04 & Le connecteur Debezium reprend exactement l\`a o\`u il s'est arr\^et\'e apr\`es un red\'emarrage & Offsets persist\'es par Kafka Connect \\
 \end{longtable}
@@ -603,7 +603,15 @@ Spring Boot & \'Ecosyst\`eme Java entreprise mature, spring-kafka, alignement JE
 %% ── CHAPITRE 8 ───────────────────────────────────────────────
 \chapter{Mod\`ele de Donn\'ees}
 
-Le monorepo est organis\'e en modules Maven ind\'ependants~: \texttt{documents-api}, les cinq services consommateurs et un module \texttt{common} regroupant les DTO de l'enveloppe d'\'ev\'enement Debezium (\texttt{before} / \texttt{after} / \texttt{op} / \texttt{ts\_ms}). Chaque service consommateur poss\`ede son propre sch\'ema de persistance, conform\'ement au principe \emph{database per service}.
+Le monorepo est organis\'e en modules Maven ind\'ependants~: \texttt{documents-api}, les cinq services consommateurs et un module \texttt{common} regroupant les DTO de l'enveloppe d'\'ev\'enement Debezium (\texttt{before} / \texttt{after} / \texttt{op} / \texttt{ts\_ms}).
+
+La persistance repose sur \textbf{une seule instance PostgreSQL, avec un sch\'ema par service}. Il ne s'agit pas du pattern \emph{database per service}~: l'isolation est \textbf{logique} et non physique. Chaque service est propri\'etaire de son sch\'ema et ne lit jamais celui d'un autre~; le d\'ecouplage applicatif reste entier, puisque les services ne communiquent que par le topic Kafka.
+
+Ce choix est assum\'e. Faire tourner six instances PostgreSQL n'apporterait aucun gain \`a cette \'echelle, pour un co\^ut d'exploitation (six conteneurs, six jeux de sauvegardes, six pools de connexions) sans rapport avec le p\'erim\`etre du projet. Si le besoin appara\^issait, la migration vers \emph{database per service} resterait triviale~: chaque sch\'ema \'etant d\'ej\`a \'etanche, il suffirait de le d\'eplacer vers une instance d\'edi\'ee sans modifier le code applicatif.
+
+\begin{critbox}
+\textbf{Invariant.} Debezium ne capte \textbf{que} la table \texttt{public.documents}. Les sch\'emas des services consommateurs (\texttt{audit}, \texttt{notif}, \texttt{integrity}, \texttt{ocr}, \texttt{siem}) ne sont jamais surveill\'es~: les capter reviendrait \`a republier dans Kafka les \'ecritures que les consommateurs viennent d'effectuer en r\'eaction \`a un \'ev\'enement, donc \`a cr\'eer une boucle infinie. Cette garantie tient \`a un seul param\`etre du connecteur~: \texttt{table.include.list = public.documents}.
+\end{critbox}
 
 \section{Table Source et Topic de Transport}
 
@@ -614,12 +622,16 @@ Le monorepo est organis\'e en modules Maven ind\'ependants~: \texttt{documents-a
 \toprule
 \textbf{Table / Topic} & \textbf{Attributs principaux} & \textbf{Remarques} \\
 \midrule
-\texttt{documents} (PostgreSQL, source) & \texttt{id}, \texttt{nom\_fichier}, \texttt{type\_mime}, \texttt{taille}, \texttt{bucket}, \texttt{objet\_cle} (cl\'e MinIO), \texttt{utilisateur}, \texttt{date\_depot}, \texttt{statut} & \texttt{REPLICA IDENTITY FULL}~; le binaire n'y figure pas \\[4pt]
-\texttt{documents} (topic Kafka) & Enveloppe Debezium~: \texttt{op}, \texttt{before}, \texttt{after}, \texttt{source} (LSN, \texttt{ts\_ms}) & Cl\'e = PK source, valeur JSON \\
+\texttt{public.documents} (PostgreSQL, source) & \texttt{id} (PK), \texttt{filename}, \texttt{content\_type}, \texttt{size}, \texttt{storage\_key}, \texttt{uploaded\_by}, \texttt{uploaded\_at} & \texttt{REPLICA IDENTITY FULL}~; le binaire n'y figure pas \\[4pt]
+\texttt{docs.public.documents} (topic Kafka) & Enveloppe Debezium~: \texttt{op}, \texttt{before}, \texttt{after}, \texttt{source} (LSN, \texttt{ts\_ms}) & Nommage \texttt{pr\'efixe.sch\'ema.table}~; cl\'e = PK source, valeur JSON \\
 \bottomrule
 \end{tabularx}
-\caption{Table source \texttt{documents} et topic de transport}
+\caption{Table source \texttt{public.documents} et topic de transport}
 \end{table}
+
+\begin{notebox}
+\textbf{Une seule cl\'e vers le fichier.} Le lien vers MinIO tient dans la colonne \texttt{storage\_key}, qui porte la cl\'e de l'objet~; le bucket est fixe (\texttt{documents}) et n'est donc pas stock\'e ligne par ligne. C'est la mat\'erialisation du \emph{Claim Check}~: la base ne conna\^it du fichier que sa r\'ef\'erence, jamais son contenu.
+\end{notebox}
 
 \section{Tables des Services Consommateurs}
 
@@ -628,20 +640,20 @@ Le monorepo est organis\'e en modules Maven ind\'ependants~: \texttt{documents-a
 \small
 \begin{tabularx}{\textwidth}{p{3.3cm}Xp{3.2cm}}
 \toprule
-\textbf{Service / Table} & \textbf{Attributs principaux} & \textbf{R\^ole} \\
+\textbf{Sch\'ema.Table} & \textbf{Attributs} & \textbf{Service et r\^ole} \\
 \midrule
-audit-service \texttt{journal\_audit} & \texttt{id}, \texttt{id\_document}, \texttt{action}, \texttt{acteur}, \texttt{horodatage}, \texttt{details} & Tra\c{c}abilit\'e (qui, quoi, quand) \\[4pt]
-blockchain-service \texttt{chaine\_hachage} & \texttt{id}, \texttt{index}, \texttt{id\_document}, \texttt{hash\_document}, \texttt{hash\_precedent}, \texttt{hash\_chaine}, \texttt{horodatage} & Registre d'int\'egrit\'e cha\^in\'e \\[4pt]
-siem-service \texttt{evenement\_securite} & \texttt{id}, \texttt{id\_document}, \texttt{type}, \texttt{severite}, \texttt{regle\_declenchee}, \texttt{acteur}, \texttt{horodatage} & \'Ev\'enements et alertes de s\'ecurit\'e \\[4pt]
-ocr-service \texttt{texte\_extrait} & \texttt{id}, \texttt{id\_document}, \texttt{moteur} (tika/tesseract), \texttt{langue}, \texttt{contenu\_texte}, \texttt{nb\_caracteres}, \texttt{horodatage} & Texte extrait consultable \\[4pt]
-notification-service \texttt{journal\_notification} & \texttt{id}, \texttt{id\_document}, \texttt{destinataire}, \texttt{statut\_envoi}, \texttt{horodatage} & Trace des e-mails \'emis \\
+\texttt{audit.audit\_log} & \texttt{event\_id} (PK), \texttt{doc\_id}, \texttt{action}, \texttt{actor}, \texttt{occurred\_at} & audit-service --- tra\c{c}abilit\'e (qui, quoi, quand) \\[4pt]
+\texttt{notif.notifications} & \texttt{id} (PK), \texttt{doc\_id}, \texttt{recipient}, \texttt{status}, \texttt{sent\_at} & notification-service --- trace des e-mails \'emis \\[4pt]
+\texttt{integrity.hash\_chain} & \texttt{seq} (PK), \texttt{doc\_id}, \texttt{doc\_hash}, \texttt{prev\_hash}, \texttt{chain\_hash}, \texttt{created\_at} & blockchain-service --- registre d'int\'egrit\'e cha\^in\'e \\[4pt]
+\texttt{ocr.extracted\_text} & \texttt{doc\_id} (PK), \texttt{text}, \texttt{engine}, \texttt{extracted\_at} & ocr-service --- texte extrait consultable \\[4pt]
+\texttt{siem.alerts} & \texttt{id} (PK), \texttt{doc\_id}, \texttt{rule}, \texttt{severity}, \texttt{detail}, \texttt{raised\_at} & siem-service --- alertes du moteur de r\`egles \\
 \bottomrule
 \end{tabularx}
-\caption{Mod\`ele de donn\'ees des cinq services consommateurs}
+\caption{Mod\`ele de donn\'ees des cinq services consommateurs (un sch\'ema par service)}
 \end{table}
 
 \begin{notebox}
-\textbf{Idempotence.} Chaque consommateur \'etant susceptible de recevoir un m\^eme \'ev\'enement plusieurs fois (\emph{at-least-once}), l'insertion est rendue idempotente par une contrainte d'unicit\'e sur la cl\'e naturelle (\texttt{id\_document} associ\'e \`a l'\texttt{offset}/\texttt{ts\_ms} de l'\'ev\'enement), coupl\'ee \`a un \emph{upsert}. Une re-livraison ne cr\'ee donc ni double audit, ni double hachage, ni double e-mail.
+\textbf{Idempotence.} Chaque consommateur \'etant susceptible de recevoir un m\^eme \'ev\'enement plusieurs fois (\emph{at-least-once}), la d\'eduplication est port\'ee par le sch\'ema lui-m\^eme plut\^ot que par du code d\'efensif~: \texttt{audit.audit\_log} est cl\'e\'e sur \texttt{event\_id} (l'identifiant de l'\'ev\'enement Debezium), et \texttt{ocr.extracted\_text} sur \texttt{doc\_id}, un document n'ayant qu'un seul texte extrait. Une re-livraison se traduit alors par un \emph{upsert} sans effet~: ni double audit, ni double hachage, ni double e-mail.
 \end{notebox}
 
 %% ── CHAPITRE 9 : MOD\'ELISATION UML ───────────────────────────
@@ -766,18 +778,18 @@ Le diagramme suivant d\'ecrit la s\'equence compl\`ete d'un d\'ep\^ot~: la phase
   rel/.style={-, thick, dashed, black!60},
   rlab/.style={font=\scriptsize, fill=white, inner sep=1pt}
 ]
-\node[class] (doc) at (0,0) {\textbf{documents}
-  \nodepart{second}\underline{id}\\ nom\_fichier\\ type\_mime\\ taille\\ bucket\\ objet\_cle\\ utilisateur\\ date\_depot\\ statut};
-\node[class] (notif) at (-7.5,3.6) {\textbf{journal\_notification}
-  \nodepart{second}\underline{id}\\ id\_document\\ destinataire\\ statut\_envoi\\ horodatage};
-\node[class] (ocr) at (-7.5,-2.6) {\textbf{texte\_extrait}
-  \nodepart{second}\underline{id}\\ id\_document\\ moteur\\ langue\\ contenu\_texte\\ nb\_caracteres\\ horodatage};
-\node[class] (aud) at (7.5,3.6) {\textbf{journal\_audit}
-  \nodepart{second}\underline{id}\\ id\_document\\ action\\ acteur\\ horodatage\\ details};
-\node[class] (hash) at (7.5,-1.0) {\textbf{chaine\_hachage}
-  \nodepart{second}\underline{id}\\ index\\ id\_document\\ hash\_document\\ hash\_precedent\\ hash\_chaine\\ horodatage};
-\node[class] (siem) at (0,-5.6) {\textbf{evenement\_securite}
-  \nodepart{second}\underline{id}\\ id\_document\\ type\\ severite\\ regle\_declenchee\\ acteur\\ horodatage};
+\node[class] (doc) at (0,0) {\textbf{public.documents}
+  \nodepart{second}\underline{id}\\ filename\\ content\_type\\ size\\ storage\_key\\ uploaded\_by\\ uploaded\_at};
+\node[class] (notif) at (-7.5,3.6) {\textbf{notif.notifications}
+  \nodepart{second}\underline{id}\\ doc\_id\\ recipient\\ status\\ sent\_at};
+\node[class] (ocr) at (-7.5,-2.6) {\textbf{ocr.extracted\_text}
+  \nodepart{second}\underline{doc\_id}\\ text\\ engine\\ extracted\_at};
+\node[class] (aud) at (7.5,3.6) {\textbf{audit.audit\_log}
+  \nodepart{second}\underline{event\_id}\\ doc\_id\\ action\\ actor\\ occurred\_at};
+\node[class] (hash) at (7.5,-1.0) {\textbf{integrity.hash\_chain}
+  \nodepart{second}\underline{seq}\\ doc\_id\\ doc\_hash\\ prev\_hash\\ chain\_hash\\ created\_at};
+\node[class] (siem) at (0,-5.6) {\textbf{siem.alerts}
+  \nodepart{second}\underline{id}\\ doc\_id\\ rule\\ severity\\ detail\\ raised\_at};
 
 \draw[rel] (doc) -- node[rlab]{1..*} (notif);
 \draw[rel] (doc) -- node[rlab]{1..*} (ocr);
@@ -786,11 +798,11 @@ Le diagramme suivant d\'ecrit la s\'equence compl\`ete d'un d\'ep\^ot~: la phase
 \draw[rel] (doc) -- node[rlab]{1..*} (siem);
 \end{tikzpicture}%
 }
-\caption{Mod\`ele de donn\'ees~: table source \texttt{documents} et tables des cinq services (r\'ef\'erence logique par \texttt{id\_document})}
+\caption{Mod\`ele de donn\'ees~: table source \texttt{public.documents} et tables des cinq services (r\'ef\'erence logique par \texttt{doc\_id})}
 \end{figure}
 
 \begin{notebox}
-\textbf{Base par service.} Chaque service consommateur poss\`ede son propre sch\'ema~; le lien vers \texttt{documents} est une \textbf{r\'ef\'erence logique} par \texttt{id\_document}, et non une cl\'e \'etrang\`ere physique inter-bases, conform\'ement au principe \emph{database per service}. Les traits en pointill\'es traduisent ce couplage faible.
+\textbf{Un sch\'ema par service.} Chaque service consommateur est propri\'etaire de son sch\'ema (\texttt{audit}, \texttt{notif}, \texttt{integrity}, \texttt{ocr}, \texttt{siem}) au sein d'une \textbf{unique} instance PostgreSQL~: l'isolation est logique, pas physique. Le lien vers \texttt{public.documents} est une \textbf{r\'ef\'erence logique} par \texttt{doc\_id}, et non une cl\'e \'etrang\`ere~: un consommateur ne d\'epend jamais du sch\'ema d'un autre, ni de la table source autrement que par l'\'ev\'enement qu'il re\c{c}oit. Les traits en pointill\'es traduisent ce couplage faible.
 \end{notebox}
 
 %% ── CHAPITRE 10 : M\'ETHODOLOGIE ET PLANNING ──────────────────
