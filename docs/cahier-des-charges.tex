@@ -1014,20 +1014,22 @@ CAN-03 & Build sans erreur. \textit{\texttt{mvn clean verify}.} & \`A tester \\
 %% ── CHAPITRE 13 ──────────────────────────────────────────────
 \chapter{Analyse des Risques}
 
-\begin{longtable}{p{4cm}p{2.4cm}p{1.6cm}p{4.6cm}}
+Chaque risque est \'evalu\'e selon sa \textbf{probabilit\'e} et son \textbf{impact} sur le projet (\'echelle~: faible, moyen, \'elev\'e), puis associ\'e \`a une mesure de mitigation. Les risques sont pr\'esent\'es du plus critique au moins critique.
+
+\begin{longtable}{p{4.4cm}p{1.6cm}p{1.6cm}p{4.2cm}}
   \toprule
-  \textbf{Risque} & \textbf{Impact} & \textbf{Prob.} & \textbf{Mitigation} \\
+  \textbf{Risque (et cons\'equence)} & \textbf{Prob.} & \textbf{Impact} & \textbf{Mitigation} \\
   \midrule
   \endhead
   \bottomrule
   \endfoot
 
-  Retard sur l'OCR (configuration Tesseract/tess4j, biblioth\`eques natives) & Fonctionnalit\'e OCR partielle & Moyenne & Traiter d'abord Tika (PDF/DOCX)~; Tesseract en option de S4, sinon perspective \\[4pt]
-  Complexit\'e multi-services (six microservices) & Charge de mise en \oe uvre \'elev\'ee & Moyenne & Monorepo Maven + module \texttt{common}, d\'emarrage orchestr\'e par Compose, semaine~6 tampon \\[4pt]
-  Courbe d'apprentissage Kafka / Debezium & Retard sur le socle & \'Elev\'ee & Semaine~2 d\'edi\'ee au socle avec jalon v\'erifiable, documentation officielle \\[4pt]
-  Configuration \texttt{wal\_level} et r\'eplication logique PostgreSQL & Capture CDC inop\'erante & Moyenne & \texttt{infra/init-scripts/} versionn\'es, \texttt{REPLICA IDENTITY FULL}, validation d\`es S2 \\[4pt]
-  Doublons li\'es au \emph{at-least-once} & Incoh\'erence des donn\'ees consommateurs & Moyenne & Idempotence par cl\'e naturelle + \emph{upsert} (cf.~\S\ref{sec:fiabilite}) \\[4pt]
-  Charge de la machine locale (six services + infra) & Lenteurs, instabilit\'e & Moyenne & Limites m\'emoire Docker, d\'emarrage s\'electif des services, profils Compose \\
+  Courbe d'apprentissage Kafka / Debezium~: retard sur le socle CDC & \'Elev\'ee & \'Elev\'e & Semaine~2 d\'edi\'ee au socle avec jalon v\'erifiable, documentation officielle \\[4pt]
+  Configuration \texttt{wal\_level} / r\'eplication logique~: capture CDC inop\'erante & Moyenne & \'Elev\'e & \texttt{infra/init-scripts/} versionn\'es, \texttt{REPLICA IDENTITY FULL}, validation d\`es S2 \\[4pt]
+  Retard sur l'OCR (Tesseract/tess4j, biblioth\`eques natives)~: OCR partiel & Moyenne & Moyen & Traiter d'abord Tika (PDF/DOCX)~; Tesseract en option, sinon perspective \\[4pt]
+  Coordination multi-services (six microservices)~: charge de mise en \oe uvre & Moyenne & Moyen & Monorepo Maven + module \texttt{common}, orchestration Compose, semaine~6 tampon \\[4pt]
+  Doublons li\'es \`a la s\'emantique \emph{at-least-once}~: incoh\'erence c\^ot\'e consommateurs & Moyenne & Moyen & Idempotence par cl\'e de d\'eduplication + \emph{upsert} (cf.~\S\ref{sec:fiabilite}) \\[4pt]
+  Charge de la machine locale (six services + infra)~: lenteurs & Moyenne & Faible & Limites m\'emoire Docker, d\'emarrage s\'electif, profils Compose \\
 \end{longtable}
 
 %% ── CHAPITRE 14 ──────────────────────────────────────────────
@@ -1085,24 +1087,6 @@ CAN-03 & Build sans erreur. \textit{\texttt{mvn clean verify}.} & \`A tester \\
   Enveloppe Debezium & Structure d'un \'ev\'enement CDC~: \texttt{before}, \texttt{after}, \texttt{op} (c/u/d) et \texttt{ts\_ms}. \\[4pt]
   MoSCoW & M\'ethode de priorisation~: \textit{Must}, \textit{Should}, \textit{Could}, \textit{Won't Have (for now)}. \\
 \end{longtable}
-
-%% ── ANNEXE : CHECKLIST DES PLACEHOLDERS ──────────────────────
-\chapter*{Checklist des Placeholders \`a Remplir}
-\addcontentsline{toc}{chapter}{Checklist des Placeholders \`a Remplir}
-
-Avant remise \`a l'encadrant, remplacer les \'el\'ements entre crochets~:
-
-\begin{itemize}[leftmargin=2.2em]
-  \item[$\square$] \textbf{[date de d\'ebut]} et \textbf{[date de fin]} du projet (6 semaines) --- fiche du document, chapitre~\ref{chap:planning} (planning), contraintes.
-  \item[$\square$] \textbf{[JJ/MM/AAAA]} --- date de r\'edaction dans la fiche du document.
-  \item[$\square$] \textbf{[N]} --- cible de d\'ebit (d\'ep\^ots/minute) de RNF-07 et nombre de r\'ep\'etitions de CAN-01.
-  \item[$\square$] Seuils exacts des \textbf{trois r\`egles SIEM}~: fr\'equence de d\'ep\^ots (nombre / fen\^etre), plage horaire autoris\'ee, liste des extensions suspectes.
-  \item[$\square$] Version exacte d'\textbf{Angular} retenue (tableau de la stack).
-  \item[$\square$] V\'erifier l'orthographe du nom de l'\'etudiant (\og Lazim Wassim \fg{}) et de l'encadrant professionnel (\og Bekkali Mohamed \fg{}).
-  \item[$\square$] Confirmer la graphie exacte de l'organisme d'accueil (\og 6Solutions \fg{}) et v\'erifier que le fichier \texttt{logo-6solutions} est bien plac\'e \`a la racine du projet Overleaf.
-  \item[$\square$] Confirmer le nom du d\'ep\^ot Git (\texttt{cdc-streaming-pipeline}) et la pr\'esence de \texttt{logo.png} \`a la racine du projet Overleaf.
-  \item[$\square$] D\'ecider si Tesseract, JWT et Testcontainers restent dans le p\'erim\`etre 5~semaines ou passent en perspectives (variante 4~semaines).
-\end{itemize}
 
 %% ── FIN DU DOCUMENT ──────────────────────────────────────────
 \end{document}
