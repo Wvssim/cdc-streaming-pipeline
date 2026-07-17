@@ -270,6 +270,10 @@ Exclu & \textbf{Multi-tenant} --- une seule organisation, pas d'isolation par lo
 Exclu & Cluster Kafka multi-broker et haute disponibilit\'e (mono-broker KRaft) \\
 Exclu & Authentification f\'ed\'er\'ee (Keycloak/SSO) --- JWT basique en option, sinon perspective \\
 Exclu & D\'etection SIEM par apprentissage automatique --- moteur \`a r\`egles uniquement \\
+Exclu & \textbf{Schema Registry / Avro} --- les \'ev\'enements restent en JSON~; le contrat d'\'echange est port\'e par le module \texttt{common} \\
+Exclu & \textbf{Kafka Streams et Flink} --- aucun traitement de flux avec \'etat~; les consommateurs sont de simples \texttt{@KafkaListener} \\
+Exclu & \textbf{S\'ecurit\'e SASL/SSL sur Kafka} --- broker en \texttt{PLAINTEXT} sur un r\'eseau Docker local \\
+Exclu & \textbf{Outbox pattern} --- la capture porte directement sur la table \texttt{documents} (cf.~\S\ref{sec:positionnement}) \\
 \bottomrule
 \end{tabularx}
 \caption{P\'erim\`etre du projet~: \'el\'ements inclus et exclus}
@@ -534,6 +538,12 @@ Azure DevOps \& GitHub & GitHub Actions CI \\
 \caption{Correspondance Azure $\rightarrow$ briques open-source}
 \end{table}
 
+\begin{notebox}
+\textbf{\og{} O\`u est l'IA~? \fg{}} La correspondance ci-dessus place \texttt{ocr-service} en regard d'Azure Machine Learning, ce qui appelle une pr\'ecision. Pour les formats structur\'es (PDF/DOCX), l'extraction repose sur Apache Tika et aucun apprentissage n'entre en jeu. Pour les images, Tesseract n'est pas un simple appariement de motifs~: depuis sa version~4, il s'appuie sur un r\'eseau de neurones r\'ecurrent (LSTM) entra\^in\'e \`a la reconnaissance de caract\`eres. Il s'agit donc bien d'inf\'erence sur un mod\`ele appris, ex\'ecut\'ee localement plut\^ot que d\'el\'egu\'ee \`a un service manag\'e.
+
+Surtout, l'architecture rend ce point extensible~: brancher un traitement d'IA plus lourd (classification de documents, extraction d'entit\'es nomm\'ees) revient \`a ajouter un septi\`eme consommateur avec son propre consumer group, sans modifier une ligne des services existants.
+\end{notebox}
+
 \section{Points Techniques Valoris\'es}
 
 \begin{itemize}[noitemsep]
@@ -548,6 +558,29 @@ Azure DevOps \& GitHub & GitHub Actions CI \\
   \item \textbf{Enveloppe d'\'ev\'enement Debezium} --- \texttt{before} / \texttt{after} / \texttt{op} / \texttt{ts\_ms} constituent le contrat d'\'echange, factoris\'e dans le module \texttt{common}.
   \item \textbf{Extensibilit\'e} --- ajouter un septi\`eme service se fait sans toucher \`a l'existant.
 \end{itemize}
+
+\section{Positionnement dans le Vocabulaire \'Ev\'enementiel}
+\label{sec:positionnement}
+
+Trois pr\'ecisions de vocabulaire d\'elimitent ce que le projet fait, et surtout ce qu'il ne fait pas.
+
+\subsection{Event notification, et non event sourcing}
+
+Le projet met en \oe uvre de l'\emph{event notification} avec transfert d'\'etat~: l'\'ev\'enement signale un changement \textbf{d\'ej\`a persist\'e} et en transporte l'image (\texttt{after}). Ce n'est \textbf{pas} de l'\emph{event sourcing}, o\`u le journal d'\'ev\'enements constituerait lui-m\^eme la source de v\'erit\'e et o\`u l'\'etat serait reconstruit en rejouant les \'ev\'enements depuis l'origine.
+
+Ici, \textbf{PostgreSQL reste l'unique source de v\'erit\'e}~; Kafka n'est qu'un moyen de transport et de diffusion. Si l'on effa\c{c}ait le topic, l'\'etat du syst\`eme resterait intact et un nouveau snapshot Debezium suffirait \`a le reconstituer. Le rejeu des offsets sert \`a relancer un traitement, jamais \`a reconstruire une v\'erit\'e.
+
+\subsection{\'Ev\'enement de donn\'ees, et non \'ev\'enement m\'etier}
+
+Le CDC \'emet un \'ev\'enement de \emph{donn\'ees} (\og{} une ligne a \'et\'e ins\'er\'ee dans \texttt{documents} \fg{}), et non un \'ev\'enement \emph{m\'etier} (\og{} \texttt{DocumentDepose} \fg{}). La critique classique est l\'egitime~: le sch\'ema de la base devient de fait le contrat d'\'echange, et le modifier peut casser les consommateurs.
+
+Dans ce projet, la port\'ee de cette critique reste faible~: un \texttt{INSERT} dans \texttt{documents} correspond exactement \`a un fait m\'etier, le mapping est de un pour un. La limite est n\'eanmoins r\'eelle, et sa r\'eponse industrielle est connue~: l'\textbf{Outbox pattern}, o\`u l'application \'ecrit l'\'ev\'enement m\'etier dans une table \texttt{outbox} d\'edi\'ee, elle-m\^eme capt\'ee par Debezium (qui fournit un \emph{Outbox Event Router}). Le contrat devient alors explicite et ind\'ependant du sch\'ema interne. Ce choix est plac\'e en \textbf{perspective} et ne fait pas partie du p\'erim\`etre impl\'ement\'e.
+
+\subsection{Le CDC \'elimine le dual-write}
+
+Le \emph{dual write} d\'esigne le fait, pour une application, d'\'ecrire \`a deux endroits dans la m\^eme op\'eration~: valider la transaction en base, puis publier l'\'ev\'enement dans Kafka. Ces deux \'ecritures n'\'etant pas atomiques, un incident survenant entre les deux laisse le syst\`eme incoh\'erent~: donn\'ee enregistr\'ee sans \'ev\'enement \'emis, ou \'ev\'enement \'emis pour une transaction finalement annul\'ee.
+
+Le CDC supprime ce probl\`eme par construction, puisque l'\'ev\'enement est \textbf{d\'eriv\'e du WAL}~: il n'existe \textbf{que si} la transaction a commit\'e. Il ne peut donc y avoir ni \'ev\'enement orphelin, ni \'ecriture silencieuse. L'application n'\'ecrit qu'\`a un seul endroit --- sa base --- et ignore jusqu'\`a l'existence de Kafka.
 
 %% ── CHAPITRE 7 ───────────────────────────────────────────────
 \chapter{Choix Technologiques Justifi\'es}
