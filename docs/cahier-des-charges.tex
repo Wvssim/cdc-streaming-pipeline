@@ -158,7 +158,7 @@ Type de document  & Cahier des charges et plan de r\'ealisation \\
 Auteur            & Lazim Wassim (fili\`ere DSI, EMSI Casablanca) \\
 Encadrant professionnel & Bekkali Mohamed (6Solutions) \\
 Organisme d'accueil & 6Solutions \\
-Dur\'ee du projet & 5 semaines, du [date de d\'ebut] au [date de fin] \\
+Dur\'ee du projet & 6 semaines, du [date de d\'ebut] au [date de fin] \\
 Version           & 1.0 \\
 Date de r\'edaction & [JJ/MM/AAAA] \\
 Statut            & Soumis pour validation par l'encadrant \\
@@ -168,7 +168,7 @@ Statut            & Soumis pour validation par l'encadrant \\
 \end{table}
 
 \begin{notebox}
-Ce document constitue \`a la fois le \textbf{cahier des charges} et le \textbf{plan de r\'ealisation d\'etaill\'e sur cinq semaines} (chapitre~\ref{chap:planning}). Il est destin\'e \`a l'\'etudiant (r\'ef\'erence de conception), \`a l'encadrant (base d'\'evaluation) et au jury de soutenance (compr\'ehension des choix techniques).
+Ce document constitue \`a la fois le \textbf{cahier des charges} et le \textbf{plan de r\'ealisation d\'etaill\'e sur six semaines} (chapitre~\ref{chap:planning}). Il est destin\'e \`a l'\'etudiant (r\'ef\'erence de conception), \`a l'encadrant (base d'\'evaluation) et au jury de soutenance (compr\'ehension des choix techniques).
 \end{notebox}
 
 %% ============================================================
@@ -181,7 +181,7 @@ La transformation num\'erique des organisations s'accompagne d'une production co
 
 Le pr\'esent projet de fin d'\'etudes propose une r\'eponse fond\'ee sur une \textbf{architecture \'ev\'enementielle (event-driven)} coupl\'ee au \textbf{Change Data Capture (CDC)}. Concr\`etement, le d\'ep\^ot d'un document dans l'application d\'eclenche, sans aucun appel direct, un ensemble de traitements ind\'ependants ex\'ecut\'es en parall\`ele. Le m\'ecanisme repose sur la capture automatique des changements de la base de donn\'ees~: l'outil Debezium lit le journal de transactions de PostgreSQL et publie chaque nouvel enregistrement sous forme d'\'ev\'enement sur le bus Apache Kafka, que cinq microservices consomment de fa\c{c}on totalement d\'ecoupl\'ee.
 
-Ce document d\'efinit le p\'erim\`etre fonctionnel et technique de la plateforme, justifie chacun des choix technologiques impos\'es, d\'ecrit l'architecture cible et le mod\`ele de donn\'ees, puis pr\'esente un plan de r\'ealisation d\'etaill\'e sur cinq semaines assorti de jalons v\'erifiables. L'accent est mis sur l'alignement avec l'\'ecosyst\`eme Java entreprise (Spring Boot, Jakarta EE), conform\'ement \`a la sp\'ecialit\'e de l'encadrant. Le projet est r\'ealis\'e dans le cadre d'un stage de fin d'\'etudes au sein de la soci\'et\'e \textbf{6Solutions}.
+Ce document d\'efinit le p\'erim\`etre fonctionnel et technique de la plateforme, justifie chacun des choix technologiques impos\'es, d\'ecrit l'architecture cible et le mod\`ele de donn\'ees, puis pr\'esente un plan de r\'ealisation d\'etaill\'e sur six semaines assorti de jalons v\'erifiables. L'accent est mis sur l'alignement avec l'\'ecosyst\`eme Java entreprise (Spring Boot, Jakarta EE), conform\'ement \`a la sp\'ecialit\'e de l'encadrant. Le projet est r\'ealis\'e dans le cadre d'un stage de fin d'\'etudes au sein de la soci\'et\'e \textbf{6Solutions}.
 
 %% ── CHAPITRE 2 ───────────────────────────────────────────────
 \chapter{Contexte et Probl\'ematique}
@@ -332,7 +332,7 @@ Les besoins fonctionnels sont identifi\'es par des codes \textbf{RF-XX} et prior
   \endfoot
 
   RF-05 & Capturer automatiquement chaque insertion dans la table \texttt{documents} via Debezium (lecture du WAL, plugin \texttt{pgoutput}), sans appel direct depuis l'API & M \\[4pt]
-  RF-06 & Publier chaque changement captur\'e sous forme d'enveloppe d'\'ev\'enement Debezium (\texttt{before}, \texttt{after}, \texttt{op}, \texttt{ts\_ms}) sur le topic Kafka \texttt{documents} & M \\[4pt]
+  RF-06 & Publier chaque changement captur\'e sous forme d'enveloppe d'\'ev\'enement Debezium (\texttt{before}, \texttt{after}, \texttt{op}, \texttt{ts\_ms}) sur le topic Kafka \texttt{docs.public.documents} & M \\[4pt]
   RF-07 & Diffuser l'\'ev\'enement en fan-out vers cinq consumer groups distincts, chacun traitant l'\'ev\'enement de mani\`ere ind\'ependante & M \\
 \end{longtable}
 
@@ -434,7 +434,7 @@ Les besoins non-fonctionnels sont identifi\'es par des codes \textbf{RNF-XX}. Il
   \bottomrule
   \endfoot
 
-  RNF-11 & D\'ecouplage total~: les consommateurs ne connaissent que le topic Kafka, jamais l'API ni les autres services & Communication uniquement via le topic \texttt{documents} \\[4pt]
+  RNF-11 & D\'ecouplage total~: les consommateurs ne connaissent que le topic Kafka, jamais l'API ni les autres services & Communication uniquement via le topic \texttt{docs.public.documents} \\[4pt]
   RNF-12 & Ajout d'un consommateur sans modification de l'existant & Nouveau consumer group s'abonnant au m\^eme topic \\[4pt]
   RNF-13 & La sant\'e de chaque service et l'\'etat des topics doivent \^etre observables & Spring Boot Actuator (\texttt{/actuator/health}) + Kafbat UI \\[4pt]
   RNF-14 & L'\'ecosyst\`eme complet doit d\'emarrer de fa\c{c}on reproductible sur toute machine disposant de Docker & \texttt{docker compose up}, aucune installation locale requise \\[4pt]
@@ -506,14 +506,38 @@ L'architecture s'inspire des sch\'emas de r\'ef\'erence cloud de Microsoft Azure
   \item L'utilisateur d\'epose un document via l'interface Angular.
   \item Angular envoie le document \`a l'API Spring Boot (\texttt{documents-api}).
   \item L'API enregistre les m\'etadonn\'ees dans PostgreSQL (\'etape 2a) et stocke le fichier binaire dans MinIO (\'etape 2b) selon le pattern \emph{Claim Check}~: le fichier ne transite jamais par Kafka ni par la base.
-  \item Debezium d\'etecte automatiquement le nouvel enregistrement en lisant le journal de transactions (WAL) --- c'est le CDC (\'etape 3) --- puis publie un \'ev\'enement sur le topic Kafka \texttt{documents} (\'etape 4).
+  \item Debezium d\'etecte automatiquement le nouvel enregistrement en lisant le journal de transactions (WAL) --- c'est le CDC (\'etape 3) --- puis publie un \'ev\'enement sur le topic Kafka \texttt{docs.public.documents} (\'etape 4).
   \item Cinq services consomment cet \'ev\'enement en parall\`ele (\'etape 5, fan-out), chacun avec son propre consumer group~: \texttt{audit-service}, \texttt{notification-service}, \texttt{blockchain-service}, \texttt{ocr-service} et \texttt{siem-service}.
   \item Le \texttt{notification-service} envoie un e-mail \`a l'utilisateur (\'etape 6, capt\'e par MailHog), tandis que l'\texttt{ocr-service} r\'ecup\`ere le fichier binaire directement depuis MinIO pour en extraire le texte.
 \end{enumerate}
 
 \section{Correspondance avec le Sch\'ema de R\'ef\'erence Azure}
 
-Le tableau suivant \'etablit la transposition, brique par brique, du sch\'ema de r\'ef\'erence Azure fourni par l'encadrant vers les \'equivalents open-source retenus.
+Le sch\'ema de r\'ef\'erence fourni par l'encadrant est un pipeline analytique Azure de bout en bout, organis\'e en \textbf{quatre couches} --- \emph{Ingest}, \emph{Store}, \emph{Process}, \emph{Consume} --- pos\'ees sur un \textbf{socle transversal} (identit\'e, secrets, observabilit\'e, s\'ecurit\'e, CI/CD). Le projet reprend \textbf{exactement cette structure en couches}, transpos\'ee en briques open-source auto-h\'eberg\'ees. La diff\'erence tient \`a la couche d'ingestion~: l\`a o\`u Azure s'appuie sur des connecteurs de streaming manag\'es (Event Hubs), le projet capte le changement \`a la source par CDC (Debezium sur le WAL PostgreSQL).
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\textwidth}{p{2.3cm}p{3.4cm}X}
+\toprule
+\textbf{Couche Azure} & \textbf{R\^ole} & \textbf{\'Equivalent retenu dans le projet} \\
+\midrule
+\textbf{Ingest} & Capter le changement \`a la source & Debezium (Kafka Connect) lisant le WAL PostgreSQL + Apache Kafka comme bus d'\'ev\'enements \\[3pt]
+\textbf{Store} & Persister donn\'ees et fichiers & PostgreSQL (m\'etadonn\'ees, source de v\'erit\'e) + MinIO (fichiers, Claim Check) \\[3pt]
+\textbf{Process} & Traiter les \'ev\'enements & Les cinq microservices consommateurs Spring Boot (audit, notification, blockchain, ocr, siem) \\[3pt]
+\textbf{Consume} & Restituer \`a l'utilisateur & Frontend Angular (tableau de bord, audit, alertes, int\'egrit\'e) + notification-service (e-mail) \\
+\midrule
+\textbf{Socle} --- identit\'e & Authentification & Spring Security + JWT (Keycloak en perspective) \\[3pt]
+\textbf{Socle} --- secrets & Gestion des secrets & Variables d'environnement Docker \\[3pt]
+\textbf{Socle} --- observabilit\'e & Supervision & Spring Boot Actuator + Kafbat UI \\[3pt]
+\textbf{Socle} --- s\'ecurit\'e & D\'etection de menaces & siem-service \\[3pt]
+\textbf{Socle} --- CI/CD & Int\'egration continue & GitHub Actions (\texttt{mvn verify}) \\
+\bottomrule
+\end{tabularx}
+\caption{Transposition par couche du sch\'ema Azure de r\'ef\'erence}
+\end{table}
+
+Le tableau suivant reprend la m\^eme correspondance, service par service, pour le d\'etail~: la transposition brique par brique du sch\'ema Azure vers les \'equivalents open-source retenus.
 
 \begin{table}[H]
 \centering
@@ -858,9 +882,9 @@ Le diagramme suivant d\'ecrit la s\'equence compl\`ete d'un d\'ep\^ot~: la phase
 
 \section{M\'ethodologie}
 
-Le projet est conduit de mani\`ere incr\'ementale sur cinq semaines, du [date de d\'ebut] au [date de fin]. Chaque semaine produit un incr\'ement d\'emontrable et se cl\^ot par un \textbf{jalon v\'erifiable}. L'ordre des semaines respecte les d\'ependances techniques~: le socle CDC pr\'ec\`ede le producteur, qui pr\'ec\`ede les consommateurs, eux-m\^emes pr\'ec\'edant le frontend et la consolidation. Les semaines ne doivent pas \^etre saut\'ees.
+Le projet est conduit de mani\`ere incr\'ementale sur six semaines, du [date de d\'ebut] au [date de fin]. Chaque semaine produit un incr\'ement d\'emontrable et se cl\^ot par un \textbf{jalon v\'erifiable}. Les deux premi\`eres semaines --- cadrage puis infrastructure et socle CDC --- sont \textbf{d\'ej\`a r\'ealis\'ees}~; l'infrastructure est construite et fusionn\'ee sur la branche principale. L'ordre respecte les d\'ependances techniques~: le socle CDC pr\'ec\`ede le producteur, qui pr\'ec\`ede les consommateurs, eux-m\^emes pr\'ec\'edant le frontend et la consolidation. Les semaines ne doivent pas \^etre saut\'ees.
 
-\section{Planning D\'etaill\'e sur Cinq Semaines}
+\section{Planning D\'etaill\'e sur Six Semaines}
 
 \begin{table}[H]
 \centering
@@ -869,14 +893,15 @@ Le projet est conduit de mani\`ere incr\'ementale sur cinq semaines, du [date de
 \toprule
 \textbf{Sem.} & \textbf{T\^aches principales} & \textbf{Jalon v\'erifiable} \\
 \midrule
-S1 & Infrastructure et socle CDC~: Docker Compose complet (PostgreSQL \texttt{wal\_level=logical}, Kafka KRaft, Kafka Connect + Debezium, MinIO, MailHog, Kafbat UI), table \texttt{documents} via \texttt{init.sql}, enregistrement du connecteur Debezium, squelette du monorepo Maven, CI GitHub Actions & Un \texttt{INSERT} manuel dans \texttt{documents} produit un \'ev\'enement visible dans Kafbat UI \\[4pt]
-S2 & Producteur et premier consommateur~: \texttt{documents-api} (upload multipart, m\'etadonn\'ees $\rightarrow$ PostgreSQL, fichier $\rightarrow$ MinIO, endpoints Swagger), module \texttt{common} (d\'es\'erialisation de l'enveloppe Debezium), \texttt{audit-service} complet & Un upload via l'API cr\'ee automatiquement une ligne d'audit, sans aucun appel direct entre les deux services \\[4pt]
-S3 & Fan-out des services l\'egers~: \texttt{notification-service} (MailHog), \texttt{blockchain-service} (hachage + cha\^inage + v\'erification), \texttt{siem-service} (trois r\`egles), consumer groups distincts, gestion d'erreurs par Dead Letter Topic & Un seul upload d\'eclenche quatre services en parall\`ele~; un message invalide part en DLT sans bloquer le pipeline \\[4pt]
-S4 & OCR et frontend~: \texttt{ocr-service} (r\'ecup\'eration depuis MinIO, extraction Tika, Tesseract si le temps le permet, texte consultable), application Angular (d\'ep\^ot drag \& drop, liste des documents avec statuts, page audit) & D\'emonstration compl\`ete pilot\'ee depuis le navigateur \\[4pt]
-S5 & Consolidation~: tests d'int\'egration Testcontainers de bout en bout, g\'en\'erateur de donn\'ees pour la d\'emo, s\'ecurit\'e JWT (si le temps le permet), README et diagrammes finaux, r\'ep\'etition du sc\'enario. Semaine tampon pour absorber les retards & Sc\'enario de d\'emonstration r\'ep\'et\'e avec succ\`es et documentation finalis\'ee \\
+S1 \emph{(fait)} & Cadrage~: validation du p\'erim\`etre avec l'encadrant, cahier des charges, maquette Figma, stack fig\'ee, cr\'eation du d\'ep\^ot Git & Cahier des charges et maquette valid\'es \\[4pt]
+S2 \emph{(fait)} & Infrastructure et socle CDC~: \texttt{infra/docker-compose.yml} (PostgreSQL \texttt{wal\_level=logical}, Kafka KRaft, Kafka Connect + Debezium, MinIO, MailHog, Kafbat UI), \texttt{infra/init-scripts/} (table \texttt{public.documents}), connecteur \texttt{source-postgres-connector}, squelette du monorepo Maven, CI GitHub Actions & Un \texttt{INSERT} manuel dans \texttt{documents} produit un \'ev\'enement visible dans Kafbat UI --- \textbf{atteint}, fusionn\'e sur \texttt{main} \\[4pt]
+S3 & Producteur et premier consommateur~: \texttt{documents-api} (upload multipart, m\'etadonn\'ees $\rightarrow$ PostgreSQL, fichier $\rightarrow$ MinIO, endpoints Swagger), module \texttt{common} (d\'es\'erialisation de l'enveloppe Debezium), \texttt{audit-service} complet & Un upload via l'API cr\'ee automatiquement une ligne d'audit, sans aucun appel direct entre les deux services \\[4pt]
+S4 & Fan-out des services l\'egers~: \texttt{notification-service} (MailHog), \texttt{blockchain-service} (hachage + cha\^inage + v\'erification), \texttt{siem-service} (trois r\`egles), consumer groups distincts, gestion d'erreurs par Dead Letter Topic & Un seul upload d\'eclenche quatre services en parall\`ele~; un message invalide part en DLT sans bloquer le pipeline \\[4pt]
+S5 & OCR et frontend~: \texttt{ocr-service} (r\'ecup\'eration depuis MinIO, extraction Tika, Tesseract si le temps le permet, texte consultable), application Angular (d\'ep\^ot drag \& drop, liste des documents avec statuts, page audit) & D\'emonstration compl\`ete pilot\'ee depuis le navigateur \\[4pt]
+S6 & Consolidation~: tests d'int\'egration Testcontainers de bout en bout, g\'en\'erateur de donn\'ees pour la d\'emo, s\'ecurit\'e JWT (si le temps le permet), README et diagrammes finaux, r\'ep\'etition du sc\'enario. Semaine tampon pour absorber les retards & Sc\'enario de d\'emonstration r\'ep\'et\'e avec succ\`es et documentation finalis\'ee \\
 \bottomrule
 \end{tabularx}
-\caption{Planning d\'etaill\'e des cinq semaines}
+\caption{Planning d\'etaill\'e des six semaines}
 \end{table}
 
 \section{Diagramme de Gantt}
@@ -893,27 +918,29 @@ S5 & Consolidation~: tests d'int\'egration Testcontainers de bout en bout, g\'en
   title label font=\small\bfseries,
   bar label font=\small,
   milestone label font=\footnotesize\itshape
-]{1}{5}
-\gantttitle{Planning de r\'ealisation --- 5 semaines}{5} \\
-\gantttitlelist{1,...,5}{1} \\
-\ganttbar{S1 --- Infrastructure \& socle CDC}{1}{1} \\
-\ganttbar{S2 --- Producteur + audit-service}{2}{2} \\
-\ganttbar{S3 --- Fan-out des services l\'egers}{3}{3} \\
-\ganttbar{S4 --- OCR + frontend Angular}{4}{4} \\
-\ganttbar{S5 --- Tests, s\'ecurit\'e \& soutenance}{5}{5} \\
+]{1}{6}
+\gantttitle{Planning de r\'ealisation --- 6 semaines}{6} \\
+\gantttitlelist{1,...,6}{1} \\
+\ganttbar{S1 --- Cadrage \& conception (fait)}{1}{1} \\
+\ganttbar{S2 --- Infrastructure \& socle CDC (fait)}{2}{2} \\
+\ganttbar{S3 --- Producteur + audit-service}{3}{3} \\
+\ganttbar{S4 --- Fan-out + DLT}{4}{4} \\
+\ganttbar{S5 --- OCR + frontend Angular}{5}{5} \\
+\ganttbar{S6 --- Tests, s\'ecurit\'e \& soutenance}{6}{6} \\
 \ganttmilestone{Jalon S1}{1} \\
 \ganttmilestone{Jalon S2}{2} \\
 \ganttmilestone{Jalon S3}{3} \\
 \ganttmilestone{Jalon S4}{4} \\
-\ganttmilestone{Jalon S5}{5}
+\ganttmilestone{Jalon S5}{5} \\
+\ganttmilestone{Jalon S6}{6}
 \end{ganttchart}%
 }
 \caption{Diagramme de Gantt du plan de r\'ealisation}
 \end{figure}
 
-\section{Variante \`a Quatre Semaines}
+\section{Marge et Variante de Repli}
 
-En cas de contrainte de calendrier, la semaine~5 est fusionn\'ee dans les semaines~3 et~4. Les \'el\'ements suivants passent alors en \textbf{perspectives}~: extraction de texte des images par Tesseract, authentification JWT, et tests d'int\'egration Testcontainers. Le c\oe ur du pipeline (CDC, fan-out, Claim Check, DLT, cha\^ine de hachage, OCR par Tika) reste int\'egralement couvert.
+La semaine~6 sert de tampon~: elle absorbe les retards des semaines pr\'ec\'edentes avant la soutenance. En cas de contrainte de calendrier plus forte, les \'el\'ements suivants passent en \textbf{perspectives}~: extraction de texte des images par Tesseract, authentification JWT, et tests d'int\'egration Testcontainers. Le c\oe ur du pipeline (CDC, fan-out, Claim Check, DLT, cha\^ine de hachage, OCR par Tika) reste dans tous les cas int\'egralement couvert.
 
 %% ── CHAPITRE 11 ──────────────────────────────────────────────
 \chapter{Livrables}
@@ -925,7 +952,7 @@ En cas de contrainte de calendrier, la semaine~5 est fusionn\'ee dans les semain
 \textbf{Livrable} & \textbf{Description} \\
 \midrule
 Monorepo Maven & Modules \texttt{documents-api}, \texttt{audit-service}, \texttt{notification-service}, \texttt{blockchain-service}, \texttt{ocr-service}, \texttt{siem-service} et \texttt{common} \\
-Infrastructure & \texttt{docker-compose.yml} complet, \texttt{init.sql} (table \texttt{documents}), configuration du connecteur Debezium (JSON) \\
+Infrastructure & \texttt{infra/docker-compose.yml} complet, \texttt{infra/init-scripts/} num\'erot\'es (\texttt{01-documents.sql}, \texttt{02-consumer-schemas.sql}), configuration du connecteur Debezium (JSON) \\
 Frontend & Application Angular (d\'ep\^ot drag \& drop, liste des documents avec statuts, page audit) \\
 Int\'egration continue & Workflow GitHub Actions (\texttt{mvn verify}) et badge de statut dans le README \\
 Documentation & Ce cahier des charges, le README, les diagrammes d'architecture et le mod\`ele de donn\'ees \\
@@ -950,9 +977,9 @@ Tests & Tests unitaires (JUnit 5) et tests d'int\'egration Testcontainers \\
   \endfoot
 
   CA-01 & D\'emarrage complet via \texttt{docker compose up} + enregistrement du connecteur & Conteneurs sains, connecteur au statut \texttt{RUNNING} & \`A tester \\[4pt]
-  CA-02 & \texttt{INSERT} manuel dans \texttt{documents} & \'Ev\'enement visible dans Kafbat UI (jalon S1) & \`A tester \\[4pt]
-  CA-03 & Upload d'un document via l'API & M\'etadonn\'ees en base, fichier dans MinIO, ligne d'audit cr\'e\'ee sans appel direct (jalon S2) & \`A tester \\[4pt]
-  CA-04 & Upload unique & Quatre services d\'eclench\'es en parall\`ele (jalon S3) & \`A tester \\[4pt]
+  CA-02 & \texttt{INSERT} manuel dans \texttt{documents} & \'Ev\'enement visible dans Kafbat UI (jalon S2) & \`A tester \\[4pt]
+  CA-03 & Upload d'un document via l'API & M\'etadonn\'ees en base, fichier dans MinIO, ligne d'audit cr\'e\'ee sans appel direct (jalon S3) & \`A tester \\[4pt]
+  CA-04 & Upload unique & Quatre services d\'eclench\'es en parall\`ele (jalon S4) & \`A tester \\[4pt]
   CA-05 & Message invalide inject\'e sur le topic & Message redirig\'e vers le DLT, flux principal non bloqu\'e & \`A tester \\[4pt]
   CA-06 & Appel de l'endpoint de v\'erification d'int\'egrit\'e & Cha\^ine de hachage recalcul\'ee et coh\'erente & \`A tester \\[4pt]
   CA-07 & D\'ep\^ots r\'ep\'et\'es hors plage horaire autoris\'ee & Alerte SIEM d\'eclench\'ee volontairement & \`A tester \\[4pt]
@@ -977,7 +1004,7 @@ CAN-03 & Build sans erreur. \textit{\texttt{mvn clean verify}.} & \`A tester \\
 
 \begin{enumerate}
   \item \textbf{D\'ep\^ot} --- depuis le navigateur, l'utilisateur d\'epose un document PDF via l'interface Angular (drag \& drop).
-  \item \textbf{\'Ev\'enement CDC} --- l'\'ev\'enement correspondant appara\^it dans Kafbat UI sur le topic \texttt{documents}.
+  \item \textbf{\'Ev\'enement CDC} --- l'\'ev\'enement correspondant appara\^it dans Kafbat UI sur le topic \texttt{docs.public.documents}.
   \item \textbf{Notification} --- l'e-mail de confirmation appara\^it dans l'interface MailHog en moins de 5\,secondes.
   \item \textbf{Int\'egrit\'e} --- l'appel \`a l'endpoint de v\'erification confirme que le hachage du document s'inscrit correctement dans la cha\^ine.
   \item \textbf{Audit et OCR} --- la ligne d'audit et le texte extrait sont consultables dans le frontend.
@@ -996,9 +1023,9 @@ CAN-03 & Build sans erreur. \textit{\texttt{mvn clean verify}.} & \`A tester \\
   \endfoot
 
   Retard sur l'OCR (configuration Tesseract/tess4j, biblioth\`eques natives) & Fonctionnalit\'e OCR partielle & Moyenne & Traiter d'abord Tika (PDF/DOCX)~; Tesseract en option de S4, sinon perspective \\[4pt]
-  Complexit\'e multi-services (six microservices) & Charge de mise en \oe uvre \'elev\'ee & Moyenne & Monorepo Maven + module \texttt{common}, d\'emarrage orchestr\'e par Compose, semaine~5 tampon \\[4pt]
-  Courbe d'apprentissage Kafka / Debezium & Retard sur le socle & \'Elev\'ee & Semaine~1 d\'edi\'ee au socle avec jalon v\'erifiable, documentation officielle \\[4pt]
-  Configuration \texttt{wal\_level} et r\'eplication logique PostgreSQL & Capture CDC inop\'erante & Moyenne & \texttt{init.sql} versionn\'e, \texttt{REPLICA IDENTITY FULL}, validation d\`es S1 \\[4pt]
+  Complexit\'e multi-services (six microservices) & Charge de mise en \oe uvre \'elev\'ee & Moyenne & Monorepo Maven + module \texttt{common}, d\'emarrage orchestr\'e par Compose, semaine~6 tampon \\[4pt]
+  Courbe d'apprentissage Kafka / Debezium & Retard sur le socle & \'Elev\'ee & Semaine~2 d\'edi\'ee au socle avec jalon v\'erifiable, documentation officielle \\[4pt]
+  Configuration \texttt{wal\_level} et r\'eplication logique PostgreSQL & Capture CDC inop\'erante & Moyenne & \texttt{infra/init-scripts/} versionn\'es, \texttt{REPLICA IDENTITY FULL}, validation d\`es S2 \\[4pt]
   Doublons li\'es au \emph{at-least-once} & Incoh\'erence des donn\'ees consommateurs & Moyenne & Idempotence par cl\'e naturelle + \emph{upsert} (cf.~\S\ref{sec:fiabilite}) \\[4pt]
   Charge de la machine locale (six services + infra) & Lenteurs, instabilit\'e & Moyenne & Limites m\'emoire Docker, d\'emarrage s\'electif des services, profils Compose \\
 \end{longtable}
@@ -1013,22 +1040,22 @@ CAN-03 & Build sans erreur. \textit{\texttt{mvn clean verify}.} & \`A tester \\
   \item PostgreSQL doit \^etre d\'emarr\'e avec \texttt{wal\_level=logical} et des \texttt{max\_replication\_slots}/\texttt{max\_wal\_senders} suffisants pour Debezium.
   \item La table \texttt{documents} doit \^etre configur\'ee en \texttt{REPLICA IDENTITY FULL}.
   \item Le fichier binaire ne doit jamais transiter par Kafka ni \^etre stock\'e en base (\emph{Claim Check} via MinIO).
-  \item Debezium est configur\'e, non cod\'e~: il s'agit uniquement d'un connecteur d\'ecrit en JSON.
+  \item Debezium est configur\'e, non cod\'e~: il s'agit d'un connecteur d\'ecrit en JSON (\texttt{source-postgres-connector}), sur \texttt{plugin.name=pgoutput}, \texttt{slot.name=cdc\_slot}, \texttt{snapshot.mode=initial} et \texttt{decimal.handling.mode=string}, ne captant que \texttt{public.documents}.
   \item Aucun secret ne doit appara\^itre en dur~; les identifiants transitent par les variables d'environnement.
 \end{itemize}
 
 \section{Contraintes Temporelles}
 
 \begin{itemize}
-  \item La r\'ealisation est born\'ee \`a \textbf{cinq semaines}, du [date de d\'ebut] au [date de fin], avec un jalon v\'erifiable par semaine.
-  \item Les semaines doivent \^etre trait\'ees dans l'ordre, sans en sauter~; la semaine~5 sert de tampon.
+  \item La r\'ealisation est born\'ee \`a \textbf{six semaines}, du [date de d\'ebut] au [date de fin], avec un jalon v\'erifiable par semaine.
+  \item Les semaines doivent \^etre trait\'ees dans l'ordre, sans en sauter~; la semaine~6 sert de tampon.
 \end{itemize}
 
 \section{Contraintes Mat\'erielles}
 
 \begin{itemize}
   \item L'ex\'ecution est \textbf{100\,\% locale} via Docker Compose, sur une seule machine de d\'eveloppement.
-  \item Les ports de d\'eveloppement sont fix\'es pour faciliter la d\'emonstration~: \texttt{documents-api} (8080), Kafka Connect (8083), Kafbat UI (8090), MinIO (9000/9001), MailHog (8025/1025), PostgreSQL (5432).
+  \item Les ports de d\'eveloppement sont fix\'es pour faciliter la d\'emonstration~: Kafbat UI (8080), \texttt{documents-api} (8081), Kafka Connect (8083), MinIO (9000/9001), MailHog (8025/1025), PostgreSQL (5432).
 \end{itemize}
 
 %% ── CHAPITRE 15 ──────────────────────────────────────────────
@@ -1066,7 +1093,7 @@ CAN-03 & Build sans erreur. \textit{\texttt{mvn clean verify}.} & \`A tester \\
 Avant remise \`a l'encadrant, remplacer les \'el\'ements entre crochets~:
 
 \begin{itemize}[leftmargin=2.2em]
-  \item[$\square$] \textbf{[date de d\'ebut]} et \textbf{[date de fin]} du projet (5 semaines) --- fiche du document, chapitre~\ref{chap:planning} (planning), contraintes.
+  \item[$\square$] \textbf{[date de d\'ebut]} et \textbf{[date de fin]} du projet (6 semaines) --- fiche du document, chapitre~\ref{chap:planning} (planning), contraintes.
   \item[$\square$] \textbf{[JJ/MM/AAAA]} --- date de r\'edaction dans la fiche du document.
   \item[$\square$] \textbf{[N]} --- cible de d\'ebit (d\'ep\^ots/minute) de RNF-07 et nombre de r\'ep\'etitions de CAN-01.
   \item[$\square$] Seuils exacts des \textbf{trois r\`egles SIEM}~: fr\'equence de d\'ep\^ots (nombre / fen\^etre), plage horaire autoris\'ee, liste des extensions suspectes.
