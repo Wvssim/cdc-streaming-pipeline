@@ -1,0 +1,25 @@
+spring:
+  application:
+    name: documents-api
+  datasource:
+    url: jdbc:postgresql://localhost:5432/docdb
+    username: cdc
+    password: cdc
+  jpa:
+    hibernate:
+      # Le schema est cree par infra/init-scripts/, on ne laisse pas Hibernate y toucher.
+      ddl-auto: none
+    open-in-view: false
+  servlet:
+    multipart:
+      max-file-size: 25MB
+      max-request-size: 25MB
+
+server:
+  port: 8081
+
+minio:
+  endpoint: http://localhost:9000
+  access-key: minioadmin
+  secret-key: minioadmin
+  bucket: documents
