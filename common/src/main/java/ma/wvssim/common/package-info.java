@@ -1,8 +1,9 @@
 /**
- * Types partages du pipeline CDC : enveloppe d'evenement Debezium
- * (before / after / op / ts_ms) et sa deserialisation.
+ * Types partages du pipeline CDC, consommes par les microservices.
  *
- * Squelette cree en semaine 2. Implementation en semaine 3 (tache T3.1),
- * a partir de la fixture reelle docs/samples/document-created-event.json.
+ * L'enveloppe d'evenement Debezium et son payload sont modelises en records Java :
+ * {@link ma.wvssim.common.DebeziumMessage} (message Kafka brut, schema + payload),
+ * {@link ma.wvssim.common.DebeziumEnvelope} (before / after / op / ts_ms + source) et
+ * {@link ma.wvssim.common.DocumentPayload} (une ligne de public.documents).
  */
 package ma.wvssim.common;

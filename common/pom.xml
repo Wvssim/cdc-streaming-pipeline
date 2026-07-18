@@ -14,9 +14,19 @@
     <name>common</name>
     <description>Types partages : enveloppe d'evenement Debezium (before/after/op/ts_ms) + deserialisation</description>
 
-    <!--
-      Squelette S2. Les dependances (jackson-databind, lombok) et le code (DTO de l'enveloppe)
-      arrivent en S3 (tache T3.1), a partir de la fixture docs/samples/document-created-event.json.
-    -->
+    <dependencies>
+        <!-- Deserialisation JSON de l'enveloppe Debezium. Les DTO sont des records Java :
+             Jackson les gere nativement, sans Lombok ni processeur d'annotations. -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 
 </project>
