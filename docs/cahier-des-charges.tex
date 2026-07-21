@@ -4,8 +4,8 @@
 %%  D\'ep\^ot et traitement de documents : documents-api -> Debezium ->
 %%  Kafka -> fan-out de 5 microservices consommateurs
 %%  Auteur : Lazim Wassim (fili\`ere DSI, EMSI Casablanca)
-%%  Encadrant professionnel : Bekkali Mohamed (6Solutions)
-%%  Type   : Cahier des charges + plan de r\'ealisation (PFE)
+%%  Encadrant professionnel : M. Bekkali Mohamed (6Solutions)
+%%  Type   : Cahier des charges + plan de r\'ealisation (stage de fin d'ann\'ee)
 %%  IMPORTANT : Compiler avec XeLaTeX ou pdfLaTeX
 %%  D\'ependance suppl\'ementaire : package pgfgantt (fourni sur Overleaf)
 %% ============================================================
@@ -109,7 +109,7 @@
 {\Huge\bfseries Plateforme Documentaire \'Ev\'enementielle}\\[0.45cm]
 {\Large D\'ep\^ot et traitement de documents\\ via un pipeline CDC event-driven}\\[0.6cm]
 {\large\bfseries Cahier des Charges \& Plan de R\'ealisation}\\[0.25cm]
-{\normalsize Projet de Fin d'\'Etudes (PFE)}
+{\normalsize Stage de fin d'ann\'ee}
 
 \vspace{0.6cm}
 \rule{0.6\linewidth}{0.4pt}\\[2.1cm]
@@ -118,12 +118,12 @@
 \centering
 {\small\scshape R\'ealis\'e par}\\[0.25cm]
 {\large Lazim Wassim}\\[0.22cm]
-{\small Fili\`ere DSI --- 4\textsuperscript{e} ann\'ee}
+{\small Fili\`ere DSI --- 4\textsuperscript{e} ann\'ee --- Groupe G3}
 \end{minipage}\hfill
 \begin{minipage}[t]{0.45\linewidth}
 \centering
 {\small\scshape Encadrant professionnel}\\[0.25cm]
-{\large Bekkali Mohamed}
+{\large M. Bekkali Mohamed}
 \end{minipage}
 
 \vspace{1.2cm}
@@ -155,8 +155,8 @@
 \midrule
 Titre du projet   & Plateforme documentaire \'ev\'enementielle bas\'ee sur un pipeline CDC \\
 Type de document  & Cahier des charges et plan de r\'ealisation \\
-Auteur            & Lazim Wassim (fili\`ere DSI, EMSI Casablanca) \\
-Encadrant professionnel & Bekkali Mohamed (6Solutions) \\
+Auteur            & Lazim Wassim (fili\`ere DSI, 4\textsuperscript{e} ann\'ee, groupe G3, EMSI Casablanca) \\
+Encadrant professionnel & M. Bekkali Mohamed (6Solutions) \\
 Organisme d'accueil & 6Solutions \\
 Dur\'ee du projet & Stage de 2 mois (juillet--ao\^ut 2026)~; r\'ealisation sur 6 semaines \\
 Version           & 1.0 \\
@@ -179,9 +179,9 @@ Ce document constitue \`a la fois le \textbf{cahier des charges} et le \textbf{p
 
 La transformation num\'erique des organisations s'accompagne d'une production continue de documents (contrats, factures, pi\`eces justificatives, rapports) dont le traitement ne peut plus se satisfaire de cha\^ines applicatives monolithiques et fortement coupl\'ees. Lorsqu'un document est d\'epos\'e, plusieurs traitements h\'et\'erog\`enes doivent \^etre d\'eclench\'es~: notifier l'utilisateur, tracer l'op\'eration \`a des fins d'audit, garantir l'int\'egrit\'e du fichier, en extraire le contenu textuel et surveiller d'\'eventuels comportements anormaux. Faire porter l'ensemble de ces responsabilit\'es par une unique application, ou les cha\^iner par des appels synchrones successifs, conduit \`a un syst\`eme rigide, difficile \`a faire \'evoluer et vuln\'erable aux pannes en cascade.
 
-Le pr\'esent projet de fin d'\'etudes propose une r\'eponse fond\'ee sur une \textbf{architecture \'ev\'enementielle (event-driven)} coupl\'ee au \textbf{Change Data Capture (CDC)}. Concr\`etement, le d\'ep\^ot d'un document dans l'application d\'eclenche, sans aucun appel direct, un ensemble de traitements ind\'ependants ex\'ecut\'es en parall\`ele. Le m\'ecanisme repose sur la capture automatique des changements de la base de donn\'ees~: l'outil Debezium lit le journal de transactions de PostgreSQL et publie chaque nouvel enregistrement sous forme d'\'ev\'enement sur le bus Apache Kafka, que cinq microservices consomment de fa\c{c}on totalement d\'ecoupl\'ee.
+Le pr\'esent projet, men\'e dans le cadre d'un stage de fin d'ann\'ee, propose une r\'eponse fond\'ee sur une \textbf{architecture \'ev\'enementielle (event-driven)} coupl\'ee au \textbf{Change Data Capture (CDC)}. Concr\`etement, le d\'ep\^ot d'un document dans l'application d\'eclenche, sans aucun appel direct, un ensemble de traitements ind\'ependants ex\'ecut\'es en parall\`ele. Le m\'ecanisme repose sur la capture automatique des changements de la base de donn\'ees~: l'outil Debezium lit le journal de transactions de PostgreSQL et publie chaque nouvel enregistrement sous forme d'\'ev\'enement sur le bus Apache Kafka, que cinq microservices consomment de fa\c{c}on totalement d\'ecoupl\'ee.
 
-Ce document d\'efinit le p\'erim\`etre fonctionnel et technique de la plateforme, justifie chacun des choix technologiques impos\'es, d\'ecrit l'architecture cible et le mod\`ele de donn\'ees, puis pr\'esente un plan de r\'ealisation d\'etaill\'e sur six semaines assorti de jalons v\'erifiables. L'accent est mis sur l'alignement avec l'\'ecosyst\`eme Java entreprise (Spring Boot, Jakarta EE), conform\'ement \`a la sp\'ecialit\'e de l'encadrant. Le projet est r\'ealis\'e dans le cadre d'un stage de fin d'\'etudes au sein de la soci\'et\'e \textbf{6Solutions}.
+Ce document d\'efinit le p\'erim\`etre fonctionnel et technique de la plateforme, justifie chacun des choix technologiques impos\'es, d\'ecrit l'architecture cible et le mod\`ele de donn\'ees, puis pr\'esente un plan de r\'ealisation d\'etaill\'e sur six semaines assorti de jalons v\'erifiables. L'accent est mis sur l'alignement avec l'\'ecosyst\`eme Java entreprise (Spring Boot, Jakarta EE), conform\'ement \`a la sp\'ecialit\'e de l'encadrant. Le projet est r\'ealis\'e dans le cadre d'un stage de fin d'ann\'ee au sein de la soci\'et\'e \textbf{6Solutions}.
 
 %% ── CHAPITRE 2 ───────────────────────────────────────────────
 \chapter{Contexte et Probl\'ematique}
@@ -889,16 +889,46 @@ Le projet est conduit de mani\`ere incr\'ementale sur six semaines, au sein d'un
 \begin{table}[H]
 \centering
 \small
-\begin{tabularx}{\textwidth}{p{1.1cm}Xp{5.1cm}}
+\renewcommand{\arraystretch}{1.35}
+\begin{tabularx}{\textwidth}{@{}p{1.15cm} >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}p{4.6cm}@{}}
 \toprule
 \textbf{Sem.} & \textbf{T\^aches principales} & \textbf{Jalon v\'erifiable} \\
 \midrule
-S1 \emph{(fait)} & Cadrage~: validation du p\'erim\`etre avec l'encadrant, cahier des charges, maquette Figma, stack fig\'ee, cr\'eation du d\'ep\^ot Git & Cahier des charges et maquette valid\'es \\[4pt]
-S2 \emph{(fait)} & Infrastructure et socle CDC~: \texttt{infra/docker-compose.yml} (PostgreSQL \texttt{wal\_level=logical}, Kafka KRaft, Kafka Connect + Debezium, MinIO, MailHog, Kafbat UI), \texttt{infra/init-scripts/} (table \texttt{public.documents}), connecteur \texttt{source-postgres-connector}, squelette du monorepo Maven, CI GitHub Actions & Un \texttt{INSERT} manuel dans \texttt{documents} produit un \'ev\'enement visible dans Kafbat UI --- \textbf{atteint}, fusionn\'e sur \texttt{main} \\[4pt]
-S3 & Producteur et premier consommateur~: \texttt{documents-api} (upload multipart, m\'etadonn\'ees $\rightarrow$ PostgreSQL, fichier $\rightarrow$ MinIO, endpoints Swagger), module \texttt{common} (d\'es\'erialisation de l'enveloppe Debezium), \texttt{audit-service} complet & Un upload via l'API cr\'ee automatiquement une ligne d'audit, sans aucun appel direct entre les deux services \\[4pt]
-S4 & Fan-out des services l\'egers~: \texttt{notification-service} (MailHog), \texttt{blockchain-service} (hachage + cha\^inage + v\'erification), \texttt{siem-service} (trois r\`egles), consumer groups distincts, gestion d'erreurs par Dead Letter Topic & Un seul upload d\'eclenche quatre services en parall\`ele~; un message invalide part en DLT sans bloquer le pipeline \\[4pt]
-S5 & OCR et frontend~: \texttt{ocr-service} (r\'ecup\'eration depuis MinIO, extraction Tika, Tesseract si le temps le permet, texte consultable), application Angular (d\'ep\^ot drag \& drop, liste des documents avec statuts, page audit) & D\'emonstration compl\`ete pilot\'ee depuis le navigateur \\[4pt]
-S6 & Consolidation~: tests d'int\'egration Testcontainers de bout en bout, g\'en\'erateur de donn\'ees pour la d\'emo, s\'ecurit\'e JWT (si le temps le permet), README et diagrammes finaux, r\'ep\'etition du sc\'enario. Semaine tampon pour absorber les retards & Sc\'enario de d\'emonstration r\'ep\'et\'e avec succ\`es et documentation finalis\'ee \\
+\textbf{S1}\newline\footnotesize\textit{fait} &
+\textbullet~ Cadrage et validation du p\'erim\`etre avec l'encadrant \newline
+\textbullet~ Cahier des charges et maquette Figma \newline
+\textbullet~ Stack fig\'ee, cr\'eation du d\'ep\^ot Git &
+Cahier des charges et maquette valid\'es \\
+\midrule
+\textbf{S2}\newline\footnotesize\textit{fait} &
+\textbullet~ Infra Docker~: PostgreSQL (\texttt{wal\_level=logical}), Kafka KRaft, Connect + Debezium, MinIO, MailHog, Kafbat UI \newline
+\textbullet~ \texttt{infra/init-scripts/} (table \texttt{public.documents}) et connecteur \texttt{source-postgres-connector} \newline
+\textbullet~ Squelette Maven multi-module et CI GitHub Actions &
+Un \texttt{INSERT} manuel produit un \'ev\'enement dans Kafbat UI --- \textbf{atteint}, fusionn\'e sur \texttt{main} \\
+\midrule
+\textbf{S3} &
+\textbullet~ \texttt{documents-api}~: upload multipart, m\'etadonn\'ees $\rightarrow$ PostgreSQL, fichier $\rightarrow$ MinIO, endpoints Swagger \newline
+\textbullet~ Module \texttt{common} (enveloppe Debezium) \newline
+\textbullet~ \texttt{audit-service} complet &
+Un upload via l'API cr\'ee une ligne d'audit, sans appel direct entre les services \\
+\midrule
+\textbf{S4} &
+\textbullet~ \texttt{notification-service} (MailHog) \newline
+\textbullet~ \texttt{blockchain-service} (hachage + cha\^inage + v\'erification) \newline
+\textbullet~ \texttt{siem-service} (trois r\`egles) \newline
+\textbullet~ Consumer groups distincts et Dead Letter Topic &
+Un seul upload d\'eclenche quatre services~; un message invalide part en DLT sans bloquer le pipeline \\
+\midrule
+\textbf{S5} &
+\textbullet~ \texttt{ocr-service}~: extraction Tika (Tesseract si le temps le permet), texte consultable \newline
+\textbullet~ Frontend Angular~: d\'ep\^ot drag \& drop, liste et statuts, page audit &
+D\'emonstration compl\`ete pilot\'ee depuis le navigateur \\
+\midrule
+\textbf{S6} &
+\textbullet~ Tests d'int\'egration Testcontainers de bout en bout \newline
+\textbullet~ G\'en\'erateur de donn\'ees pour la d\'emo, s\'ecurit\'e JWT (si le temps le permet) \newline
+\textbullet~ README, diagrammes, r\'ep\'etition du sc\'enario (semaine tampon) &
+Sc\'enario de d\'emonstration r\'ep\'et\'e avec succ\`es et documentation finalis\'ee \\
 \bottomrule
 \end{tabularx}
 \caption{Planning d\'etaill\'e des six semaines}
@@ -968,7 +998,8 @@ Tests & Tests unitaires (JUnit 5) et tests d'int\'egration Testcontainers \\
 
 \section{Crit\`eres d'Acceptation}
 
-\begin{longtable}{p{1.2cm}p{5.4cm}p{5cm}p{1.3cm}}
+\renewcommand{\arraystretch}{1.3}
+\begin{longtable}{p{1.1cm} >{\raggedright\arraybackslash}p{5.3cm} >{\raggedright\arraybackslash}p{5.0cm} >{\raggedright\arraybackslash}p{1.5cm}}
   \toprule
   \textbf{Test} & \textbf{Sc\'enario} & \textbf{R\'esultat attendu} & \textbf{Statut} \\
   \midrule
@@ -985,10 +1016,12 @@ Tests & Tests unitaires (JUnit 5) et tests d'int\'egration Testcontainers \\
   CA-07 & D\'ep\^ots r\'ep\'et\'es hors plage horaire autoris\'ee & Alerte SIEM d\'eclench\'ee volontairement & \`A tester \\[4pt]
   CA-08 & Red\'emarrage d'un consommateur en cours de traitement & Aucun \'ev\'enement perdu, aucun doublon apr\`es reprise & \`A tester \\
 \end{longtable}
+\renewcommand{\arraystretch}{1}
 
 \begin{table}[H]
 \centering
-\begin{tabularx}{\textwidth}{p{1.5cm}Xp{2.6cm}}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{\textwidth}{p{1.5cm} >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}p{2.6cm}}
 \toprule
 \textbf{Test} & \textbf{Crit\`ere non-fonctionnel et protocole} & \textbf{Statut} \\
 \midrule
@@ -1016,7 +1049,8 @@ CAN-03 & Build sans erreur. \textit{\texttt{mvn clean verify}.} & \`A tester \\
 
 Chaque risque est \'evalu\'e selon sa \textbf{probabilit\'e} et son \textbf{impact} sur le projet (\'echelle~: faible, moyen, \'elev\'e), puis associ\'e \`a une mesure de mitigation. Les risques sont pr\'esent\'es du plus critique au moins critique.
 
-\begin{longtable}{p{4.4cm}p{1.6cm}p{1.6cm}p{4.2cm}}
+\renewcommand{\arraystretch}{1.4}
+\begin{longtable}{>{\raggedright\arraybackslash}p{4.7cm} >{\centering\arraybackslash}p{1.7cm} >{\centering\arraybackslash}p{1.7cm} >{\raggedright\arraybackslash}p{4.3cm}}
   \toprule
   \textbf{Risque (et cons\'equence)} & \textbf{Prob.} & \textbf{Impact} & \textbf{Mitigation} \\
   \midrule
@@ -1031,6 +1065,7 @@ Chaque risque est \'evalu\'e selon sa \textbf{probabilit\'e} et son \textbf{impa
   Doublons li\'es \`a la s\'emantique \emph{at-least-once}~: incoh\'erence c\^ot\'e consommateurs & Moyenne & Moyen & Idempotence par cl\'e de d\'eduplication + \emph{upsert} (cf.~\S\ref{sec:fiabilite}) \\[4pt]
   Charge de la machine locale (six services + infra)~: lenteurs & Moyenne & Faible & Limites m\'emoire Docker, d\'emarrage s\'electif, profils Compose \\
 \end{longtable}
+\renewcommand{\arraystretch}{1}
 
 %% ── CHAPITRE 14 ──────────────────────────────────────────────
 \chapter{Contraintes}
