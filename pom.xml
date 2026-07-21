@@ -33,6 +33,7 @@
     <modules>
         <module>common</module>
         <module>documents-api</module>
+        <module>audit-service</module>
     </modules>
 
 </project>
