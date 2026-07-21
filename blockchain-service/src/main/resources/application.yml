@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: blockchain-service
+  datasource:
+    url: jdbc:postgresql://localhost:5432/docdb
+    username: cdc
+    password: cdc
+  jpa:
+    hibernate:
+      ddl-auto: none
+    open-in-view: false
+  kafka:
+    # 9094 = listener hote de Kafka (l'app tourne hors Docker)
+    bootstrap-servers: localhost:9094
+    consumer:
+      group-id: blockchain-service
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    producer:
+      # utilise par le DeadLetterPublishingRecoverer pour republier les messages en erreur
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
+server:
+  port: 8085
+
+minio:
+  endpoint: http://localhost:9000
+  access-key: minioadmin
+  secret-key: minioadmin
+  bucket: documents
