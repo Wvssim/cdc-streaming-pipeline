@@ -27,13 +27,13 @@
 
     <!--
       Les modules naissent quand on les code (S3 a S5) : pas de module vide en avance.
-      Restent a venir : audit-service, notification-service, blockchain-service,
-      ocr-service, siem-service.
+      Restent a venir : blockchain-service, siem-service, ocr-service.
     -->
     <modules>
         <module>common</module>
         <module>documents-api</module>
         <module>audit-service</module>
+        <module>notification-service</module>
     </modules>
 
 </project>

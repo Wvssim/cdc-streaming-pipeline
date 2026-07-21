@@ -9,3 +9,6 @@ target/
 CLAUDE.md
 CLAUDE.local.md
 .claude/
+
+# Aide-memoire perso (avancement, notes de reprise) : reference interne, pas pour le repo public
+docs/aide-memoire.md

@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: notification-service
+  datasource:
+    url: jdbc:postgresql://localhost:5432/docdb
+    username: cdc
+    password: cdc
+  jpa:
+    hibernate:
+      ddl-auto: none
+    open-in-view: false
+  kafka:
+    # 9094 = listener hote de Kafka (l'app tourne hors Docker)
+    bootstrap-servers: localhost:9094
+    consumer:
+      group-id: notification-service
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    producer:
+      # utilise par le DeadLetterPublishingRecoverer pour republier les messages en erreur
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+  mail:
+    host: localhost
+    port: 1025
+
+server:
+  port: 8084
+
+notification:
+  recipient-domain: cdc-streaming-pipeline.local
