@@ -43,10 +43,10 @@ Plan de travail : **[docs/plan-6-semaines.md](docs/plan-6-semaines.md)**.
 |---|---|---|
 | `documents-api` | Upload multipart → métadonnées PostgreSQL + fichier MinIO | 8081 |
 | `audit-service` | Trace de chaque opération (qui, quoi, quand) | 8082 |
-| `notification-service` | E-mail de confirmation à l'utilisateur | — |
-| `blockchain-service` | Registre d'intégrité par chaîne de hash SHA-256 | — |
+| `notification-service` | E-mail de confirmation à l'utilisateur | 8084 |
+| `blockchain-service` | Registre d'intégrité par chaîne de hash SHA-256 | 8085 |
 | `ocr-service` | Extraction de texte (Apache Tika / Tesseract) | — |
-| `siem-service` | Détection de comportements anormaux | — |
+| `siem-service` | Détection de comportements anormaux | 8086 |
 
 Infrastructure : PostgreSQL 17 (CDC via `wal_level=logical`), Kafka 4.1 en mode KRaft,
 Debezium 3.5 (connecteur, pas de code), MinIO, MailHog, Kafbat UI.
@@ -66,12 +66,18 @@ mvn -B verify
 # 3. Lancer les services
 java -jar documents-api/target/documents-api-0.0.1-SNAPSHOT.jar &
 java -jar audit-service/target/audit-service-0.0.1-SNAPSHOT.jar &
+java -jar notification-service/target/notification-service-0.0.1-SNAPSHOT.jar &
+java -jar blockchain-service/target/blockchain-service-0.0.1-SNAPSHOT.jar &
+java -jar siem-service/target/siem-service-0.0.1-SNAPSHOT.jar &
 
 # 4. Déposer un document
 curl -F "file=@monfichier.pdf" -F "uploadedBy=demo" http://localhost:8081/api/documents
 
-# 5. Vérifier le pipeline : l'événement dans Kafka, la trace d'audit créée automatiquement
+# 5. Vérifier le fan-out : le même événement déclenche les 4 services en parallèle
 curl http://localhost:8082/api/audit
+curl http://localhost:8084/api/notifications
+curl http://localhost:8085/api/integrity
+curl http://localhost:8086/api/alerts
 ```
 
 Enregistrement du connecteur Debezium : voir la section « Commandes » de
@@ -91,7 +97,8 @@ Enregistrement du connecteur Debezium : voir la section « Commandes » de
 - ✅ Infrastructure et socle CDC (Docker Compose, connecteur Debezium, CI)
 - ✅ `documents-api` — upload, Claim Check MinIO
 - ✅ `audit-service` — premier consommateur, jalon prouvé (upload → ligne d'audit automatique)
-- ⬜ `notification-service`, `blockchain-service`, `siem-service` (fan-out complet + Dead Letter Topic)
+- ✅ `notification-service`, `blockchain-service`, `siem-service` — fan-out complet + Dead Letter Topic
+  (1 upload → 4 services en parallèle, message invalide isolé en DLT)
 - ⬜ `ocr-service` et frontend Angular
 - ⬜ Tests d'intégration, sécurité, consolidation
 
