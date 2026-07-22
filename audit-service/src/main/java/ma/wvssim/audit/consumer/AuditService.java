@@ -52,12 +52,12 @@ public class AuditService {
         log.info("audit : event_id={} action={} doc_id={} actor={}", eventId, action, docId, actor);
     }
 
+    /** Une erreur de parsing est une vraie anomalie : elle remonte au conteneur Kafka (-> retry puis DLT). */
     private DebeziumEnvelope<DocumentPayload> parse(String rawEvent) {
         try {
             return mapper.readValue(rawEvent, EVENT_TYPE).payload();
         } catch (Exception e) {
-            log.warn("evenement illisible, ignore : {}", e.getMessage());
-            return null;
+            throw new IllegalArgumentException("evenement illisible : " + e.getMessage(), e);
         }
     }
 
