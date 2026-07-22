@@ -128,7 +128,7 @@ cdc-streaming-pipeline/
 | `notif` | `notification-service` | `notifications` (doc_id, recipient, status, sent_at) |
 | `integrity` | `blockchain-service` | `hash_chain` (seq, doc_id, doc_hash, prev_hash, chain_hash, created_at) |
 | `ocr` | `ocr-service` | `extracted_text` (doc_id, text, engine, extracted_at) |
-| `siem` | `siem-service` | `alerts` (doc_id, rule, severity, detail, raised_at) |
+| `siem` | `siem-service` | `alerts` (doc_id, rule, severity, detail, raised_at) ; `deposits` (doc_id, actor, filename, uploaded_at) — historique interne alimenté par Kafka, pour la règle de fréquence |
 
 Le fichier binaire vit dans MinIO, bucket `documents`, clé = `storage_key`.
 

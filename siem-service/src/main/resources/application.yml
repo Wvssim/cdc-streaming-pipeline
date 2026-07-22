@@ -1,0 +1,36 @@
+spring:
+  application:
+    name: siem-service
+  datasource:
+    url: jdbc:postgresql://localhost:5432/docdb
+    username: cdc
+    password: cdc
+  jpa:
+    hibernate:
+      ddl-auto: none
+    open-in-view: false
+  kafka:
+    # 9094 = listener hote de Kafka (l'app tourne hors Docker)
+    bootstrap-servers: localhost:9094
+    consumer:
+      group-id: siem-service
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    producer:
+      # utilise par le DeadLetterPublishingRecoverer pour republier les messages en erreur
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
+server:
+  port: 8086
+
+siem:
+  # Regle 1 (frequence) : plus de max-deposits depots par le meme acteur dans window-minutes -> alerte.
+  max-deposits: 5
+  window-minutes: 10
+  # Regle 2 (horaire) : en dehors de [business-hours-start, business-hours-end) -> alerte.
+  business-hours-start: 7
+  business-hours-end: 21
+  # Regle 3 (extension) : extensions de fichiers considerees comme suspectes.
+  suspicious-extensions: exe,bat,cmd,sh,js,vbs,scr,msi,jar,ps1

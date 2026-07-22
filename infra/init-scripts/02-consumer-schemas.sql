@@ -56,3 +56,12 @@ CREATE TABLE IF NOT EXISTS siem.alerts (
     detail     TEXT,
     raised_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- siem-service : historique interne des dépôts déjà vus, alimenté uniquement par Kafka.
+-- Nécessaire pour la règle de fréquence, sans lire le schéma public d'un autre service.
+CREATE TABLE IF NOT EXISTS siem.deposits (
+    doc_id      BIGINT PRIMARY KEY,
+    actor       VARCHAR(128),
+    filename    VARCHAR(255),
+    uploaded_at TIMESTAMPTZ
+);
