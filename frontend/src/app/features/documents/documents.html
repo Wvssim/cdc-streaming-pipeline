@@ -1,0 +1,99 @@
+<header class="page-header">
+  <div>
+    <h1>Documents</h1>
+    <p>Traités en temps réel par le pipeline CDC</p>
+  </div>
+  <div class="page-header__actions">
+    <label class="search">
+      <app-icon name="search" />
+      <input type="text" placeholder="Rechercher..." disabled />
+    </label>
+    <button class="btn-primary" (click)="fileInput.click()">
+      <app-icon name="upload-cloud" />
+      Déposer un document
+    </button>
+  </div>
+</header>
+
+@if (error()) {
+  <div class="banner banner--danger">{{ error() }}</div>
+}
+
+<div
+  class="dropzone"
+  [class.dropzone--active]="dragOver()"
+  (dragover)="onDragOver($event)"
+  (dragleave)="onDragLeave()"
+  (drop)="onDrop($event)"
+  (click)="fileInput.click()"
+>
+  <app-icon name="upload-cloud" />
+  <p class="dropzone__title">{{ uploading() ? 'Envoi en cours...' : 'Glissez vos documents ici' }}</p>
+  <p class="dropzone__hint">ou cliquez pour parcourir · PDF, DOCX, JPG — 25 Mo max</p>
+  <input #fileInput type="file" hidden (change)="onFileSelected($event)" accept=".pdf,.docx,.jpg,.jpeg,.png" />
+</div>
+
+<div class="kpi-row">
+  <app-kpi-card [value]="rows().length" label="Documents traités">
+    <app-icon name="file-text" />
+  </app-kpi-card>
+  <app-kpi-card [value]="verifiedCount()" label="Intégrité vérifiée">
+    <app-icon name="shield" />
+  </app-kpi-card>
+  <app-kpi-card [value]="extractedCount()" label="Textes extraits">
+    <app-icon name="scan-text" />
+  </app-kpi-card>
+  <app-kpi-card value="—" label="Alertes SIEM (à venir)" variant="dark">
+    <app-icon name="alert-triangle" />
+  </app-kpi-card>
+</div>
+
+<section class="table-card">
+  <h2>Derniers documents</h2>
+
+  @if (loading()) {
+    <p class="table-card__empty">Chargement...</p>
+  } @else if (rows().length === 0) {
+    <p class="table-card__empty">Aucun document déposé pour l'instant.</p>
+  } @else {
+    <table>
+      <thead>
+        <tr>
+          <th>Document</th>
+          <th>Taille</th>
+          <th>Intégrité</th>
+          <th>OCR</th>
+          <th>Déposé le</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of rows(); track row.id) {
+          <tr>
+            <td>
+              <p class="doc-name">{{ row.filename }}</p>
+              <p class="doc-meta">{{ row.contentType }}</p>
+            </td>
+            <td>{{ formatSize(row.size) }}</td>
+            <td>
+              @if (row.integrityStatus === 'verifie') {
+                <app-status-pill status="success" label="Vérifié" />
+              } @else {
+                <app-status-pill status="neutral" label="En attente" />
+              }
+            </td>
+            <td>
+              @if (row.ocrStatus === 'verifie') {
+                <app-status-pill status="success" label="Extrait" />
+              } @else if (row.ocrStatus === 'en_cours') {
+                <app-status-pill status="warning" label="En cours" />
+              } @else {
+                <app-status-pill status="neutral" label="En attente" />
+              }
+            </td>
+            <td>{{ formatDate(row.uploadedAt) }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</section>

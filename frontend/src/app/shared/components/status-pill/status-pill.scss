@@ -1,0 +1,19 @@
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 14px;
+  color: var(--gray-700);
+
+  &__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+
+    &--success { background: var(--status-success); }
+    &--warning { background: var(--status-warning); }
+    &--danger { background: var(--status-danger); }
+    &--neutral { background: var(--status-neutral); }
+  }
+}

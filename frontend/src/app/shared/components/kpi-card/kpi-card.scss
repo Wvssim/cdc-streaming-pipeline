@@ -1,0 +1,22 @@
+.kpi-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-6);
+  background: var(--gray-0);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-sm);
+  text-align: center;
+
+  &__value {
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  &__label {
+    font-size: 14px;
+    color: var(--gray-500);
+  }
+}

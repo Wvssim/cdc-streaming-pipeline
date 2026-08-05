@@ -1,0 +1,31 @@
+<aside class="sidebar">
+  <div class="sidebar__logo">
+    <span class="sidebar__logo-mark"><app-icon name="file-text" /></span>
+    GED
+  </div>
+
+  <nav class="sidebar__nav">
+    @for (item of navItems; track item.path) {
+      <a
+        class="sidebar__link"
+        [routerLink]="item.path"
+        routerLinkActive="sidebar__link--active"
+      >
+        <app-icon [name]="item.icon" />
+        {{ item.label }}
+      </a>
+    }
+  </nav>
+
+  <div class="sidebar__profile">
+    <span class="sidebar__avatar">WL</span>
+    <div>
+      <p class="sidebar__profile-name">Wassim L.</p>
+      <p class="sidebar__profile-role">Administrateur</p>
+    </div>
+  </div>
+</aside>
+
+<main class="content">
+  <router-outlet />
+</main>

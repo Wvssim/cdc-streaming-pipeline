@@ -1,0 +1,59 @@
+<header class="page-header">
+  <div>
+    <h1>Tableau de bord</h1>
+    <p>Vue d'ensemble du pipeline CDC</p>
+  </div>
+</header>
+
+@if (error()) {
+  <div class="banner banner--danger">{{ error() }}</div>
+}
+
+<div class="kpi-row">
+  <app-kpi-card [value]="rows().length" label="Documents traités">
+    <app-icon name="file-text" />
+  </app-kpi-card>
+  <app-kpi-card [value]="verifiedCount()" label="Intégrité vérifiée">
+    <app-icon name="shield" />
+  </app-kpi-card>
+  <app-kpi-card [value]="rows().length - verifiedCount()" label="En attente d'intégrité">
+    <app-icon name="alert-triangle" />
+  </app-kpi-card>
+</div>
+
+<section class="table-card">
+  <h2>Derniers documents</h2>
+
+  @if (loading()) {
+    <p class="table-card__empty">Chargement...</p>
+  } @else if (recent().length === 0) {
+    <p class="table-card__empty">Aucun document déposé pour l'instant.</p>
+  } @else {
+    <table>
+      <thead>
+        <tr>
+          <th>Document</th>
+          <th>Déposé par</th>
+          <th>Intégrité</th>
+          <th>Déposé le</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of recent(); track row.id) {
+          <tr>
+            <td>{{ row.filename }}</td>
+            <td>{{ row.uploadedBy }}</td>
+            <td>
+              @if (row.integrityStatus === 'verifie') {
+                <app-status-pill status="success" label="Vérifié" />
+              } @else {
+                <app-status-pill status="neutral" label="En attente" />
+              }
+            </td>
+            <td>{{ formatDate(row.uploadedAt) }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</section>

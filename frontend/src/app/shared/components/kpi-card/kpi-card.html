@@ -1,0 +1,7 @@
+<div class="kpi-card">
+  <app-icon-badge [variant]="variant()">
+    <ng-content></ng-content>
+  </app-icon-badge>
+  <p class="kpi-card__value">{{ value() }}</p>
+  <p class="kpi-card__label">{{ label() }}</p>
+</div>
