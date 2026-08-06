@@ -1,4 +1,55 @@
-<div class="page-placeholder">
-  <h1>Piste d'audit</h1>
-  <p>Écran à venir.</p>
+<header class="page-header">
+  <div>
+    <h1>Piste d'audit</h1>
+    <p>Événements consommés depuis le flux CDC</p>
+  </div>
+</header>
+
+@if (error()) {
+  <div class="banner banner--danger">{{ error() }}</div>
+}
+
+<div class="kpi-row">
+  <app-kpi-card [value]="rows().length" label="Événements tracés">
+    <app-icon name="history" />
+  </app-kpi-card>
+  <app-kpi-card [value]="documentsCount()" label="Documents concernés">
+    <app-icon name="file-text" />
+  </app-kpi-card>
+  <app-kpi-card [value]="lastEventAt() ? formatDate(lastEventAt()!) : '—'" label="Dernière activité">
+    <app-icon name="check-circle" />
+  </app-kpi-card>
 </div>
+
+<section class="table-card">
+  <h2>Événements</h2>
+
+  @if (loading()) {
+    <p class="table-card__empty">Chargement...</p>
+  } @else if (rows().length === 0) {
+    <p class="table-card__empty">Aucun événement pour l'instant.</p>
+  } @else {
+    <table>
+      <thead>
+        <tr>
+          <th>Action</th>
+          <th>Document</th>
+          <th>Acteur</th>
+          <th>Identifiant événement</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of rows(); track row.eventId) {
+          <tr>
+            <td><app-status-pill [status]="statusFor(row.action)" [label]="actionLabel(row.action)" /></td>
+            <td>#{{ row.docId }}</td>
+            <td>{{ row.actor }}</td>
+            <td class="event-id">{{ row.eventId }}</td>
+            <td>{{ formatDate(row.occurredAt) }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</section>
