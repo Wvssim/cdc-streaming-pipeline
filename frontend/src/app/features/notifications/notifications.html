@@ -1,4 +1,53 @@
-<div class="page-placeholder">
-  <h1>Notifications</h1>
-  <p>Écran à venir.</p>
+<header class="page-header">
+  <div>
+    <h1>Notifications</h1>
+    <p>E-mails envoyés suite à un dépôt de document</p>
+  </div>
+</header>
+
+@if (error()) {
+  <div class="banner banner--danger">{{ error() }}</div>
+}
+
+<div class="kpi-row">
+  <app-kpi-card [value]="rows().length" label="Notifications">
+    <app-icon name="mail" />
+  </app-kpi-card>
+  <app-kpi-card [value]="sentCount()" label="Envoyées">
+    <app-icon name="check-circle" />
+  </app-kpi-card>
+  <app-kpi-card [value]="failedCount()" label="En échec">
+    <app-icon name="alert-triangle" />
+  </app-kpi-card>
 </div>
+
+<section class="table-card">
+  <h2>Historique</h2>
+
+  @if (loading()) {
+    <p class="table-card__empty">Chargement...</p>
+  } @else if (rows().length === 0) {
+    <p class="table-card__empty">Aucune notification pour l'instant.</p>
+  } @else {
+    <table>
+      <thead>
+        <tr>
+          <th>Statut</th>
+          <th>Document</th>
+          <th>Destinataire</th>
+          <th>Date d'envoi</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of rows(); track row.id) {
+          <tr>
+            <td><app-status-pill [status]="statusFor(row.status)" [label]="statusLabel(row.status)" /></td>
+            <td>#{{ row.docId }}</td>
+            <td>{{ row.recipient }}</td>
+            <td>{{ formatDate(row.sentAt) }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</section>
