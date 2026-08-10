@@ -1,4 +1,55 @@
-<div class="page-placeholder">
-  <h1>Alertes SIEM</h1>
-  <p>Écran à venir.</p>
+<header class="page-header">
+  <div>
+    <h1>Alertes SIEM</h1>
+    <p>Anomalies détectées sur les dépôts de documents</p>
+  </div>
+</header>
+
+@if (error()) {
+  <div class="banner banner--danger">{{ error() }}</div>
+}
+
+<div class="kpi-row">
+  <app-kpi-card [value]="rows().length" label="Alertes levées">
+    <app-icon name="shield" />
+  </app-kpi-card>
+  <app-kpi-card [value]="highSeverityCount()" label="Sévérité élevée">
+    <app-icon name="alert-triangle" />
+  </app-kpi-card>
+  <app-kpi-card [value]="lastAlertAt() ? formatDate(lastAlertAt()!) : '—'" label="Dernière alerte">
+    <app-icon name="history" />
+  </app-kpi-card>
 </div>
+
+<section class="table-card">
+  <h2>Alertes</h2>
+
+  @if (loading()) {
+    <p class="table-card__empty">Chargement...</p>
+  } @else if (rows().length === 0) {
+    <p class="table-card__empty">Aucune alerte pour l'instant.</p>
+  } @else {
+    <table>
+      <thead>
+        <tr>
+          <th>Sévérité</th>
+          <th>Règle</th>
+          <th>Document</th>
+          <th>Détail</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of rows(); track row.id) {
+          <tr>
+            <td><app-status-pill [status]="severityTone(row.severity)" [label]="severityLabel(row.severity)" /></td>
+            <td>{{ ruleLabel(row.rule) }}</td>
+            <td>#{{ row.docId }}</td>
+            <td class="detail">{{ row.detail }}</td>
+            <td>{{ formatDate(row.raisedAt) }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</section>
