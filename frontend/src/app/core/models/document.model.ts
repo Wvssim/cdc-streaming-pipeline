@@ -24,6 +24,12 @@ export interface OcrEntry {
   extractedAt: string;
 }
 
+export interface VerifyResponse {
+  valid: boolean;
+  linksChecked: number;
+  brokenAtSeq: number | null;
+}
+
 export type DocRowStatus = 'verifie' | 'en_cours' | 'en_attente';
 
 export interface DocumentRow extends DocumentDto {

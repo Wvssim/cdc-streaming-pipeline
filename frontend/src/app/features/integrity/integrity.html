@@ -1,4 +1,61 @@
-<div class="page-placeholder">
-  <h1>Intégrité</h1>
-  <p>Écran à venir.</p>
+<header class="page-header">
+  <div>
+    <h1>Intégrité</h1>
+    <p>Registre de hash chaîné — un maillon par document déposé</p>
+  </div>
+</header>
+
+@if (error()) {
+  <div class="banner banner--danger">{{ error() }}</div>
+} @else if (verification() && !verification()!.valid) {
+  <div class="banner banner--danger">
+    Rupture détectée dans la chaîne d'intégrité au maillon #{{ verification()!.brokenAtSeq }}.
+  </div>
+}
+
+<div class="kpi-row">
+  <app-kpi-card [value]="rows().length" label="Maillons enregistrés">
+    <app-icon name="link" />
+  </app-kpi-card>
+  <app-kpi-card [value]="chainLabel()" label="État de la chaîne">
+    <app-icon name="shield" />
+  </app-kpi-card>
+  <app-kpi-card [value]="lastEntryAt() ? formatDate(lastEntryAt()!) : '—'" label="Dernier maillon">
+    <app-icon name="history" />
+  </app-kpi-card>
 </div>
+
+<section class="table-card">
+  <h2>Chaîne de hash</h2>
+
+  @if (loading()) {
+    <p class="table-card__empty">Chargement...</p>
+  } @else if (rows().length === 0) {
+    <p class="table-card__empty">Aucun maillon pour l'instant.</p>
+  } @else {
+    <table>
+      <thead>
+        <tr>
+          <th>Maillon</th>
+          <th>Document</th>
+          <th>Hash document</th>
+          <th>Hash précédent</th>
+          <th>Hash de chaîne</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of rows(); track row.seq) {
+          <tr>
+            <td>#{{ row.seq }}</td>
+            <td>#{{ row.docId }}</td>
+            <td class="hash">{{ truncateHash(row.docHash) }}</td>
+            <td class="hash">{{ truncateHash(row.prevHash) }}</td>
+            <td class="hash">{{ truncateHash(row.chainHash) }}</td>
+            <td>{{ formatDate(row.createdAt) }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</section>
