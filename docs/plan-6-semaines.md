@@ -54,13 +54,13 @@ Apache Tika + tess4j · Testcontainers · Docker Compose · GitHub Actions.
 
 ## 2. Vue d'ensemble
 
-| Sem. | Objectif (une phrase) | Livrables clés | Jalon vérifiable |
-|---|---|---|---|
-| **S2** | Monter l'infra et **prouver la chaîne CDC** avant tout code métier | `infra/docker-compose.yml`, `infra/init.sql` (schémas + table `documents`), connecteur Debezium, squelette monorepo (parent + `common`), CI | **Un `INSERT` manuel → événement visible dans Kafbat UI** |
-| **S3** | Valider le pattern event-driven **de bout en bout** | `documents-api` (upload + Claim Check + Swagger), module `common`, `audit-service` | **Un upload API crée une ligne d'audit, sans appel direct entre services** |
-| **S4** | Répéter le pattern : **fan-out complet** + robustesse | `notification-service`, `blockchain-service`, `siem-service`, Dead Letter Topic | **1 upload → 4 services en parallèle ; message invalide → DLT sans blocage** |
-| **S5** | **OCR + frontend Angular** (indépendants : si l'OCR bloque, on avance sur le front) | `ocr-service` (Tika), app Angular conforme maquette (6 écrans) | **Démo complète pilotée depuis le navigateur** |
-| **S6** | Consolider, tester, préparer la soutenance (**tampon**) | Tests Testcontainers e2e, générateur de démo, sécurité JWT (si temps), README/diagrammes/rapport | **Scénario de démo répété avec succès + documentation finalisée** |
+| Sem. | Objectif (une phrase) | Livrables clés | Jalon vérifiable | Statut |
+|---|---|---|---|---|
+| **S2** | Monter l'infra et **prouver la chaîne CDC** avant tout code métier | `infra/docker-compose.yml`, `infra/init.sql` (schémas + table `documents`), connecteur Debezium, squelette monorepo (parent + `common`), CI | **Un `INSERT` manuel → événement visible dans Kafbat UI** | ✅ terminée |
+| **S3** | Valider le pattern event-driven **de bout en bout** | `documents-api` (upload + Claim Check + Swagger), module `common`, `audit-service` | **Un upload API crée une ligne d'audit, sans appel direct entre services** | ✅ terminée |
+| **S4** | Répéter le pattern : **fan-out complet** + robustesse | `notification-service`, `blockchain-service`, `siem-service`, Dead Letter Topic | **1 upload → 4 services en parallèle ; message invalide → DLT sans blocage** | ✅ terminée |
+| **S5** | **OCR + frontend Angular** (indépendants : si l'OCR bloque, on avance sur le front) | `ocr-service` (Tika), app Angular conforme maquette (6 écrans) | **Démo complète pilotée depuis le navigateur** | 🔶 en cours — Tika fait ; 7/7 écrans Angular branchés (Tableau de bord, Documents, Piste d'audit, Notifications, Alertes SIEM, Intégrité, Détail document) ; Tesseract optionnel non fait |
+| **S6** | Consolider, tester, préparer la soutenance (**tampon**) | Tests Testcontainers e2e, générateur de démo, sécurité JWT (si temps), README/diagrammes/rapport | **Scénario de démo répété avec succès + documentation finalisée** | ⬜ pas commencée |
 
 ---
 
@@ -164,8 +164,8 @@ premier événement.
 | **T3.4** | **`audit-service`** : `@KafkaListener` sur `docs.public.documents` (consumer group `audit-service`) → insertion dans `audit.audit_log` (`event_id, doc_id, action, actor, occurred_at`) + `GET /api/audit`. | 2 ½j | T3.1, Jalon S2 | Un événement consommé crée une ligne d'audit ; `GET /api/audit` la renvoie. |
 | **T3.5** | 🏁 **JALON** : upload d'un fichier via `documents-api` → vérifier qu'une **ligne d'audit apparaît automatiquement**. Contrôler l'avancement de l'offset du consumer group dans Kafbat UI. | 1 ½j | T3.2, T3.4 | Après un upload, `GET /api/audit` contient l'entrée ; aucun appel HTTP direct entre les deux services. |
 
-> **Ports applicatifs proposés** (à confirmer, hors `CLAUDE.md`) : `documents-api` **8090**, `audit-service` 8091,
-> `notification-service` 8092, `blockchain-service` 8093, `ocr-service` 8094, `siem-service` 8095.
+> **Ports applicatifs retenus** : `documents-api` **8081**, `audit-service` 8082, `notification-service` 8084,
+> `blockchain-service` 8085, `siem-service` 8086, `ocr-service` 8087.
 > On évite **8080** (Kafbat UI) et **8083** (Kafka Connect), déjà pris par l'infra.
 
 **Livrables S3 :** `documents-api` fonctionnel (upload + Claim Check + Swagger), module `common` réutilisable,
@@ -391,8 +391,8 @@ docker exec -it cdc-postgres psql -U cdc -d docdb -c \
 - [ ] `[date soutenance]` — date de la soutenance.
 - [ ] Dates du **Gantt** (§3) recalées sur la vraie date de début.
 - [ ] `[jour de la semaine]` du **point hebdomadaire** avec l'encadrant (§6).
-- [ ] Valider les **ports applicatifs** proposés (§3 : 8090–8095) et, si retenus, les reporter dans `CLAUDE.md`.
-- [ ] **URL du dépôt GitHub** (pour badge CI et README).
+- [x] **Ports applicatifs** validés (§3) et reportés dans `docs/ARCHITECTURE.md` / `README.md`.
+- [x] **URL du dépôt GitHub** — https://github.com/Wvssim/cdc-streaming-pipeline
 - [ ] Confirmer le **schéma final de `public.documents`** (colonnes exactes) avec l'encadrant.
 - [ ] Vérifier que la **maquette Figma** couvre bien les écrans listés en S5 (sinon la compléter).
 

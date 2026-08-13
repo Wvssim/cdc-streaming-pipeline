@@ -5,7 +5,11 @@
 Plateforme de dépôt et de traitement de documents, bâtie sur un **pipeline CDC event-driven** : PostgreSQL → Debezium → Kafka → 5 microservices consommateurs indépendants.
 
 **PFE** — Wassim Lazim, EMSI Casablanca. Encadrant : Pr. Bekkali Mohamed (spécialité JEE).
-**Durée** : 6 semaines. **État actuel** : S1 terminée (cahier des charges + maquette Figma). S2 en cours (infrastructure).
+**Durée** : 6 semaines. **État actuel** : S2 à S4 terminées (infra CDC, `documents-api`, fan-out complet
+des 4 consommateurs légers + DLT). S5 en cours : `ocr-service` (Apache Tika) fait, frontend Angular
+avec les 7 écrans (Tableau de bord, Documents, Piste d'audit, Notifications, Alertes SIEM, Intégrité,
+Détail document) branchés sur les vraies APIs ; reste Tesseract (option). S6 (tests, JWT, consolidation)
+pas commencée.
 
 ## Le flux nominal — défini par l'encadrant, NON NÉGOCIABLE
 
@@ -112,6 +116,7 @@ cdc-streaming-pipeline/
 ├── docs/
 │   ├── ARCHITECTURE.md             # source de vérité (ce document)
 │   ├── cahier-des-charges.tex      # cahier des charges (LaTeX)
+│   ├── Rapport.tex                 # rapport de stage (LaTeX)
 │   ├── plan-6-semaines.md          # plan de réalisation détaillé
 │   └── maquette/                   # export de la maquette Figma (référence contractuelle du front)
 └── CLAUDE.md                       # pointeur vers docs/ARCHITECTURE.md (git-ignoré)

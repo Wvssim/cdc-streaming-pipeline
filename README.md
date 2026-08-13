@@ -45,8 +45,8 @@ Plan de travail : **[docs/plan-6-semaines.md](docs/plan-6-semaines.md)**.
 | `audit-service` | Trace de chaque opération (qui, quoi, quand) | 8082 |
 | `notification-service` | E-mail de confirmation à l'utilisateur | 8084 |
 | `blockchain-service` | Registre d'intégrité par chaîne de hash SHA-256 | 8085 |
-| `ocr-service` | Extraction de texte (Apache Tika / Tesseract) | — |
 | `siem-service` | Détection de comportements anormaux | 8086 |
+| `ocr-service` | Extraction de texte (Apache Tika ; Tesseract en option) | 8087 |
 
 Infrastructure : PostgreSQL 17 (CDC via `wal_level=logical`), Kafka 4.1 en mode KRaft,
 Debezium 3.5 (connecteur, pas de code), MinIO, MailHog, Kafbat UI.
@@ -99,8 +99,10 @@ Enregistrement du connecteur Debezium : voir la section « Commandes » de
 - ✅ `audit-service` — premier consommateur, jalon prouvé (upload → ligne d'audit automatique)
 - ✅ `notification-service`, `blockchain-service`, `siem-service` — fan-out complet + Dead Letter Topic
   (1 upload → 4 services en parallèle, message invalide isolé en DLT)
-- ⬜ `ocr-service` et frontend Angular
-- ⬜ Tests d'intégration, sécurité, consolidation
+- ✅ `ocr-service` — extraction de texte via Apache Tika (PDF/DOCX)
+- ✅ Frontend Angular — design system + 7 écrans (Tableau de bord, Documents, Piste d'audit,
+  Notifications, Alertes SIEM, Intégrité, Détail document) branchés sur les vraies APIs
+- ⬜ Tesseract (OCR images), tests d'intégration, sécurité JWT, consolidation
 
 ## Build
 
