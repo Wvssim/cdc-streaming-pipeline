@@ -58,7 +58,14 @@
 }
 
 .doc-name {
+  display: inline-block;
   font-weight: 500;
+  color: var(--gray-900);
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
 }
 
 .doc-meta {

@@ -1,4 +1,5 @@
 import { Component, computed, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { DocumentsService } from '../../core/services/documents.service';
 import { DocumentRow } from '../../core/models/document.model';
@@ -8,7 +9,7 @@ import { Icon } from '../../shared/components/icon/icon';
 
 @Component({
   selector: 'app-documents',
-  imports: [KpiCard, StatusPill, Icon],
+  imports: [KpiCard, StatusPill, Icon, RouterLink],
   templateUrl: './documents.html',
   styleUrl: './documents.scss',
 })

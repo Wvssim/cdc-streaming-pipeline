@@ -15,6 +15,14 @@ export class DocumentsService {
     return this.http.post<DocumentDto>(API.documents, form);
   }
 
+  getById(id: number): Observable<DocumentDto> {
+    return this.http.get<DocumentDto>(`${API.documents}/${id}`);
+  }
+
+  getOcr(docId: number): Observable<OcrEntry | null> {
+    return this.http.get<OcrEntry>(`${API.ocr}/${docId}`).pipe(catchError(() => of(null)));
+  }
+
   /** Liste les documents et enrichit chaque ligne avec le statut intégrité (blockchain-service)
    *  et OCR (ocr-service), interrogés en parallèle par document. */
   listWithStatus(): Observable<DocumentRow[]> {

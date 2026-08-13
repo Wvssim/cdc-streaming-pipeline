@@ -70,7 +70,7 @@
         @for (row of rows(); track row.id) {
           <tr>
             <td>
-              <p class="doc-name">{{ row.filename }}</p>
+              <a class="doc-name" [routerLink]="['/documents', row.id]">{{ row.filename }}</a>
               <p class="doc-meta">{{ row.contentType }}</p>
             </td>
             <td>{{ formatSize(row.size) }}</td>

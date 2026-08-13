@@ -1,4 +1,60 @@
-<div class="page-placeholder">
-  <h1>Détail du document</h1>
-  <p>Écran à venir.</p>
-</div>
+<a class="back-link" routerLink="/documents">← Retour aux documents</a>
+
+@if (error()) {
+  <div class="banner banner--danger">{{ error() }}</div>
+} @else if (loading()) {
+  <p class="table-card__empty">Chargement...</p>
+} @else if (document(); as doc) {
+  <header class="page-header">
+    <div>
+      <h1>{{ doc.filename }}</h1>
+      <p>{{ doc.contentType }} · {{ formatSize(doc.size) }} · déposé par {{ doc.uploadedBy }} le {{ formatDate(doc.uploadedAt) }}</p>
+    </div>
+  </header>
+
+  <div class="detail-grid">
+    <section class="table-card">
+      <h2>Chaîne d'intégrité</h2>
+      @if (integrityEntry(); as entry) {
+        <dl class="fact-list">
+          <div><dt>Maillon</dt><dd>#{{ entry.seq }}</dd></div>
+          <div><dt>Hash du document</dt><dd class="hash">{{ entry.docHash }}</dd></div>
+          <div><dt>Hash précédent</dt><dd class="hash">{{ entry.prevHash }}</dd></div>
+          <div><dt>Hash de chaîne</dt><dd class="hash">{{ entry.chainHash }}</dd></div>
+          <div><dt>Enregistré le</dt><dd>{{ formatDate(entry.createdAt) }}</dd></div>
+        </dl>
+      } @else {
+        <p class="table-card__empty">Pas encore de maillon pour ce document.</p>
+      }
+    </section>
+
+    <section class="table-card">
+      <h2>Texte OCR</h2>
+      @if (ocrEntry(); as ocr) {
+        <p class="ocr-meta">Moteur {{ ocr.engine }} · extrait le {{ formatDate(ocr.extractedAt) }}</p>
+        <pre class="ocr-text">{{ ocr.text }}</pre>
+      } @else {
+        <p class="table-card__empty">Texte pas encore extrait.</p>
+      }
+    </section>
+  </div>
+
+  <section class="table-card timeline-card">
+    <h2>Timeline des 5 services</h2>
+    <ol class="timeline">
+      @for (item of timeline(); track item.service) {
+        <li>
+          <app-icon [name]="item.icon" />
+          <div class="timeline__body">
+            <div class="timeline__head">
+              <span class="timeline__service">{{ item.service }}</span>
+              <app-status-pill [status]="item.tone" [label]="item.status" />
+            </div>
+            <p class="timeline__detail">{{ item.detail }}</p>
+          </div>
+          <span class="timeline__at">{{ formatDate(item.at) }}</span>
+        </li>
+      }
+    </ol>
+  </section>
+}
