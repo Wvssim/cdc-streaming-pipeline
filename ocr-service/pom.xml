@@ -17,6 +17,7 @@
     <properties>
         <minio.version>8.5.13</minio.version>
         <tika.version>2.9.2</tika.version>
+        <tess4j.version>5.13.0</tess4j.version>
     </properties>
 
     <dependencies>
@@ -71,6 +72,15 @@
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
             <version>2.19.0</version>
+        </dependency>
+
+        <!-- OCR images (Should du plan S5) : wrapper JNA autour du binaire natif Tesseract.
+             Necessite Tesseract + donnees de langue (tessdata) installes sur la machine hote,
+             voir README pour la procedure. -->
+        <dependency>
+            <groupId>net.sourceforge.tess4j</groupId>
+            <artifactId>tess4j</artifactId>
+            <version>${tess4j.version}</version>
         </dependency>
 
         <dependency>

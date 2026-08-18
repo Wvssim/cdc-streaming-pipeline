@@ -30,3 +30,10 @@ minio:
   access-key: minioadmin
   secret-key: minioadmin
   bucket: documents
+
+# OCR images (Should) : necessite le binaire Tesseract + les fichiers de langue (tessdata)
+# installes sur la machine hote. Voir README pour la procedure. datapath = dossier qui
+# contient les .traineddata (fra.traineddata, eng.traineddata), pas le fichier lui-meme.
+tesseract:
+  datapath: ${TESSERACT_DATAPATH:tessdata}
+  languages: ${TESSERACT_LANGUAGES:fra+eng}

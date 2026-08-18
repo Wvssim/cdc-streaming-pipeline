@@ -5,11 +5,12 @@
 Plateforme de dépôt et de traitement de documents, bâtie sur un **pipeline CDC event-driven** : PostgreSQL → Debezium → Kafka → 5 microservices consommateurs indépendants.
 
 **PFE** — Wassim Lazim, EMSI Casablanca. Encadrant : Pr. Bekkali Mohamed (spécialité JEE).
-**Durée** : 6 semaines. **État actuel** : S2 à S4 terminées (infra CDC, `documents-api`, fan-out complet
-des 4 consommateurs légers + DLT). S5 en cours : `ocr-service` (Apache Tika) fait, frontend Angular
-avec les 7 écrans (Tableau de bord, Documents, Piste d'audit, Notifications, Alertes SIEM, Intégrité,
-Détail document) branchés sur les vraies APIs ; reste Tesseract (option). S6 (tests, JWT, consolidation)
-pas commencée.
+**Durée** : 6 semaines. **État actuel** : S2 à S5 terminées (infra CDC, `documents-api`, fan-out complet
+des 4 consommateurs légers + DLT, `ocr-service` Tika + dispatch Tesseract sur les images, frontend
+Angular avec les 7 écrans (Tableau de bord, Documents, Piste d'audit, Notifications, Alertes SIEM,
+Intégrité, Détail document) branchés sur les vraies APIs). Tesseract est câblé côté code mais nécessite
+un binaire natif installé sur la machine hôte pour être actif (non testé en CI). S6 (tests, JWT,
+consolidation) pas commencée.
 
 ## Le flux nominal — défini par l'encadrant, NON NÉGOCIABLE
 

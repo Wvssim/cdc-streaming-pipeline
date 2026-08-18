@@ -99,10 +99,25 @@ Enregistrement du connecteur Debezium : voir la section « Commandes » de
 - ✅ `audit-service` — premier consommateur, jalon prouvé (upload → ligne d'audit automatique)
 - ✅ `notification-service`, `blockchain-service`, `siem-service` — fan-out complet + Dead Letter Topic
   (1 upload → 4 services en parallèle, message invalide isolé en DLT)
-- ✅ `ocr-service` — extraction de texte via Apache Tika (PDF/DOCX)
+- ✅ `ocr-service` — extraction de texte via Apache Tika (PDF/DOCX) ; dispatch Tesseract câblé
+  pour les images (binaire natif requis pour l'activer, voir « OCR images » ci-dessous)
 - ✅ Frontend Angular — design system + 7 écrans (Tableau de bord, Documents, Piste d'audit,
   Notifications, Alertes SIEM, Intégrité, Détail document) branchés sur les vraies APIs
-- ⬜ Tesseract (OCR images), tests d'intégration, sécurité JWT, consolidation
+- ⬜ Tests d'intégration, sécurité JWT, consolidation
+
+### OCR images (Tesseract)
+
+`ocr-service` route automatiquement les images (`content_type` commençant par `image/`) vers
+Tesseract, les autres formats (PDF/DOCX) restant sur Tika. Tesseract (via `tess4j`) s'appuie sur
+le binaire natif du même nom : sans lui installé sur la machine qui exécute `ocr-service`, un
+dépôt d'image échouera au niveau de l'extraction (le document reste visible, sans texte OCR).
+
+Pour l'activer :
+1. Installer Tesseract OCR (ex. [UB Mannheim builds](https://github.com/UB-Mannheim/tesseract/wiki)
+   sous Windows, `apt install tesseract-ocr tesseract-ocr-fra` sous Linux).
+2. Repérer le dossier `tessdata` (contient `fra.traineddata`, `eng.traineddata`).
+3. Définir `TESSERACT_DATAPATH` (chemin vers ce dossier) avant de lancer `ocr-service` ;
+   `TESSERACT_LANGUAGES` (défaut `fra+eng`) si besoin d'une autre combinaison.
 
 ## Build
 
