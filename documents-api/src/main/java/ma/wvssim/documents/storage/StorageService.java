@@ -2,6 +2,7 @@ package ma.wvssim.documents.storage;
 
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
+import io.minio.RemoveObjectArgs;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -40,5 +41,14 @@ public class StorageService {
             throw new StorageException("depot dans MinIO impossible", e);
         }
         return key;
+    }
+
+    /** Supprime l'objet MinIO correspondant au document efface (cote lecture du Claim Check). */
+    public void delete(String key) {
+        try {
+            minioClient.removeObject(RemoveObjectArgs.builder().bucket(bucket).object(key).build());
+        } catch (Exception e) {
+            throw new StorageException("suppression dans MinIO impossible", e);
+        }
     }
 }

@@ -49,7 +49,7 @@ documents-api ──── métadonnées ──▶ PostgreSQL (public.documents)
 
 | Service | Rôle | Endpoint de lecture |
 |---|---|---|
-| `documents-api` | Producteur. Upload multipart → métadonnées Postgres + fichier MinIO | `GET /api/documents` |
+| `documents-api` | Producteur. Upload multipart → métadonnées Postgres + fichier MinIO. Aussi `PUT /api/documents/{id}` (renommage) et `DELETE /api/documents/{id}` (métadonnées + objet MinIO), pour exercer les événements CDC `UPDATE`/`DELETE`, pas seulement `INSERT` | `GET /api/documents` |
 | `audit-service` | Trace toutes les opérations (qui, quoi, quand) | `GET /api/audit` |
 | `notification-service` | Envoie un e-mail à l'utilisateur (MailHog en dev) | `GET /api/notifications` |
 | `blockchain-service` | Hash SHA-256 + chaînage `hash_n = SHA256(hash_doc ‖ hash_n-1)` | `GET /api/integrity` |

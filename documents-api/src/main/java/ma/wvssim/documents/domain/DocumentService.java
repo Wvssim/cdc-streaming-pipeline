@@ -48,4 +48,20 @@ public class DocumentService {
     public Document findById(Long id) {
         return repository.findById(id).orElseThrow(() -> new DocumentNotFoundException(id));
     }
+
+    /** Le flush JPA emet un UPDATE, capte par Debezium avec before/after grace a REPLICA IDENTITY FULL. */
+    @Transactional
+    public Document rename(Long id, String newFilename) {
+        Document document = findById(id);
+        document.rename(newFilename);
+        return document;
+    }
+
+    /** Supprime la ligne (DELETE capte par Debezium) puis l'objet MinIO associe. */
+    @Transactional
+    public void delete(Long id) {
+        Document document = findById(id);
+        repository.delete(document);
+        storageService.delete(document.getStorageKey());
+    }
 }

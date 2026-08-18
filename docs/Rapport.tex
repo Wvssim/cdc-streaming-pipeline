@@ -500,11 +500,21 @@ Ces neuf invariants, fix\'es d\`es le cahier des charges, ont guid\'e chaque d\'
 \begin{enumerate}[leftmargin=1.5em]
   \item \textbf{Claim Check} --- le fichier binaire ne transite jamais par Kafka ni par PostgreSQL ; seule sa \texttt{storage\_key} y circule.
   \item \textbf{Aucun appel HTTP direct entre microservices} --- v\'erifi\'e par relecture de code~: aucun \texttt{RestTemplate}/\texttt{WebClient} d'un service vers un autre n'existe dans le monorepo.
-  \item \textbf{Un consumer group distinct par service} --- quatre \texttt{group-id} diff\'erents (\texttt{audit-service}, \texttt{blockchain-service}, \texttt{notification-service}, \texttt{siem-service}) confirm\'es dans Kafbat UI.
+  \item \textbf{Un consumer group distinct par service} --- cinq \texttt{group-id} diff\'erents (\texttt{audit-service}, \texttt{blockchain-service}, \texttt{notification-service}, \texttt{ocr-service}, \texttt{siem-service}), tous \texttt{STABLE} et sans lag, confirm\'es dans Kafbat UI (figure~\ref{fig:kafka-consumer-groups}).
   \item \textbf{Idempotence} --- chaque consommateur d\'edu-plique sur une cl\'e naturelle (\S\ref{sec:idempotence}).
-  \item \texttt{REPLICA IDENTITY FULL} sur \texttt{public.documents}.
+  \item \texttt{REPLICA IDENTITY FULL} sur \texttt{public.documents}, avec un slot de r\'eplication logique actif (\texttt{cdc\_slot}, plugin \texttt{pgoutput})~:
+\begin{lstlisting}
+docdb=# \d+ documents
+...
+Replica Identity: FULL
+
+docdb=# SELECT slot_name, plugin, slot_type, active FROM pg_replication_slots;
+ slot_name |  plugin  | slot_type | active
+-----------+----------+-----------+--------
+ cdc_slot  | pgoutput | logical   | t
+\end{lstlisting}
   \item \textbf{Debezium ne surveille que \texttt{public.documents}} (\texttt{table.include.list}).
-  \item \textbf{Dead Letter Topic} sur les quatre consommateurs.
+  \item \textbf{Dead Letter Topic} sur les cinq consommateurs, v\'erifi\'e en injectant directement un message non-JSON sur le topic source~: les cinq \'echouent la d\'es\'erialisation et republient chacun sur \texttt{docs.public.documents-dlt} (figure~\ref{fig:kafka-dlt-messages}), sans bloquer le traitement des messages suivants.
   \item \textbf{Cha\^ine de hachage append-only}, jamais r\'e\'ecrite.
   \item \textbf{\'Ev\'enement n\'e du CDC, jamais d'un dual-write} --- \texttt{documents-api} n'\'ecrit qu'en base ; il ignore Kafka.
 \end{enumerate}
@@ -695,6 +705,12 @@ public List<DocumentResponse> list()
 
 @GetMapping("/{id}")
 public DocumentResponse get(@PathVariable Long id)
+
+@PutMapping("/{id}")
+public DocumentResponse rename(@PathVariable Long id, @RequestParam String filename)
+
+@DeleteMapping("/{id}")
+public void delete(@PathVariable Long id)
 \end{lstlisting}
 
 La cl\'e MinIO est g\'en\'er\'ee de mani\`ere \`a rester unique et \`a neutraliser les s\'eparateurs de chemin du nom de fichier original :
@@ -707,6 +723,26 @@ public static String forUpload(String originalFilename) {
     return UUID.randomUUID() + "-" + safe;
 }
 \end{lstlisting}
+
+\subsection{D\'emonstration \texttt{UPDATE}/\texttt{DELETE} --- \texttt{before}/\texttt{after}}
+
+Le flux nominal ne d\'ecrit que la cr\'eation (\texttt{INSERT}). Pour v\'erifier que le CDC capture bien les trois op\'erations, \texttt{PUT}/\texttt{DELETE} ont \'et\'e ajout\'es~: renommer un document \'emet un \texttt{UPDATE}, le supprimer un \texttt{DELETE} (m\'etadonn\'ees en base \textbf{et} objet MinIO). Gr\^ace \`a \texttt{REPLICA IDENTITY FULL}, Debezium fournit l'image compl\`ete \texttt{before} pour les deux op\'erations, et \texttt{after} pour l'\texttt{UPDATE}.
+
+\begin{figure}[H]
+  \centering
+  \figureOuPlaceholder{kafka_update_event_before_after.png}{\'Ev\'enement UPDATE (\`a ins\'erer)}{0.9\textwidth}
+  \caption{\'Ev\'enement \texttt{UPDATE} r\'eel~: \texttt{before.filename="demo-screenshot.pdf"}, \texttt{after.filename="rapport-final-renomme.pdf"} --- le reste des colonnes est identique, seul le champ modifi\'e change}
+  \label{fig:kafka-update-event}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \figureOuPlaceholder{kafka_delete_event_before_after.png}{\'Ev\'enement DELETE (\`a ins\'erer)}{0.9\textwidth}
+  \caption{\'Ev\'enement \texttt{DELETE} r\'eel~: \texttt{before} contient la derni\`ere image compl\`ete de la ligne, \texttt{after} vaut \texttt{null} --- s\'emantique standard du CDC log-based}
+  \label{fig:kafka-delete-event}
+\end{figure}
+
+\texttt{audit-service} n'a n\'ecessit\'e \textbf{aucune modification} pour tracer ces deux op\'erations~: \texttt{AuditActions.of(op)} g\'erait d\'ej\`a \texttt{"u"} $\to$ \texttt{MISE\_A\_JOUR} et \texttt{"d"} $\to$ \texttt{SUPPRESSION} depuis la semaine~3, jamais exerc\'e faute d'endpoint --- preuve suppl\'ementaire que le d\'ecouplage par Kafka rend l'ajout de fonctionnalit\'es non-intrusif.
 
 \section{\texttt{audit-service} --- Premier Consommateur}
 
@@ -776,6 +812,13 @@ public VerifyResponse verify() {
 
 R\'eagit uniquement aux cr\'eations (\texttt{isCreate()}), construit le destinataire (\texttt{uploadedBy + "@" + recipientDomain}) et envoie un e-mail via \texttt{JavaMailSender} vers MailHog. Une erreur d'envoi SMTP est captur\'ee et trace un statut \texttt{ECHEC} en base plut\^ot que de faire \'echouer le traitement Kafka --- seule une erreur de d\'es\'erialisation JSON d\'eclenche le m\'ecanisme de retry/DLT.
 
+\begin{figure}[H]
+  \centering
+  \figureOuPlaceholder{mailhog_inbox.png}{Capture MailHog (\`a ins\'erer)}{0.9\textwidth}
+  \caption{MailHog --- e-mail de confirmation re\c{c}u suite au d\'ep\^ot d'un document, corps g\'en\'er\'e par \texttt{notification-service}}
+  \label{fig:mailhog}
+\end{figure}
+
 \section{\texttt{siem-service} --- Moteur de R\`egles}
 
 Les trois r\`egles sont impl\'ement\'ees comme des fonctions pures, param\'etr\'ees par configuration (\texttt{application.yml}) et test\'ees unitairement (\texttt{SiemRulesTest}) :
@@ -841,7 +884,7 @@ public DefaultErrorHandler errorHandler(KafkaTemplate<Object, Object> template) 
 }
 \end{lstlisting}
 
-Deux tentatives espac\'ees d'une seconde, puis republication sur \texttt{docs.public.documents.dlt}. Le \texttt{DeadLetterPublishingRecoverer} nomme le DLT \`a partir du \textbf{topic source}, non du consumer group : les cinq consommateurs partagent donc le m\^eme topic de secours, ce que confirme la vue des topics Kafbat UI (figure~\ref{fig:kafka-topics}) une fois cette fonctionnalit\'e activ\'ee.
+Deux tentatives espac\'ees d'une seconde, puis republication sur \texttt{docs.public.documents.dlt}. Le \texttt{DeadLetterPublishingRecoverer} nomme le DLT \`a partir du \textbf{topic source}, non du consumer group : les cinq consommateurs partagent donc le m\^eme topic de secours, ce que confirme la vue des topics Kafbat UI post-S4 (figure~\ref{fig:kafka-topics-dlt}).
 
 \textbf{Idempotence} : chaque consommateur d\'edu-plique sur une cl\'e naturelle propre \`a son domaine --- \texttt{event\_id} (LSN) pour l'audit, \texttt{doc\_id} pour la blockchain, les notifications, l'OCR et le SIEM. Une re-livraison Kafka ne produit donc jamais de double audit, de double e-mail ni de double maillon de hachage.
 
@@ -885,6 +928,31 @@ Cette section documente l'infrastructure r\'eellement d\'emarr\'ee, avec des cap
   \label{fig:minio-console}
 \end{figure}
 
+\section{Fan-out et R\'esilience --- Captures post-S4}
+
+Les captures suivantes, prises apr\`es l'introduction du Dead Letter Topic (semaine~4), compl\`etent celles du jalon S2 et prouvent les deux propri\'et\'es cl\'es du pipeline~: le fan-out r\'eel vers les cinq consommateurs et l'existence du DLT partag\'e.
+
+\begin{figure}[H]
+  \centering
+  \figureOuPlaceholder{kafbat_consumer_groups_s4.png}{Consumer groups Kafbat UI (\`a ins\'erer)}{0.9\textwidth}
+  \caption{Cinq consumer groups distincts (\texttt{audit-service}, \texttt{blockchain-service}, \texttt{notification-service}, \texttt{ocr-service}, \texttt{siem-service}), tous \texttt{STABLE}, consumer lag \`a 0 --- preuve du fan-out sur le m\^eme topic}
+  \label{fig:kafka-consumer-groups}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \figureOuPlaceholder{kafbat_topics_post_s4_dlt.png}{Liste des topics post-S4 (\`a ins\'erer)}{0.9\textwidth}
+  \caption{Liste des topics apr\`es activation du DLT~: \texttt{docs.public.documents-dlt} existe d\'esormais aux c\^ot\'es du topic source, partag\'e par les cinq consommateurs}
+  \label{fig:kafka-topics-dlt}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \figureOuPlaceholder{kafbat_dlt_messages.png}{Messages du DLT (\`a ins\'erer)}{0.9\textwidth}
+  \caption{DLT en action~: un message non-JSON publi\'e directement sur \texttt{docs.public.documents} g\'en\`ere cinq entr\'ees dans le DLT, une par consommateur --- le m\'ecanisme intercepte r\'eellement une erreur, il ne se contente pas d'exister}
+  \label{fig:kafka-dlt-messages}
+\end{figure}
+
 %% ── CHAPITRE 8 ───────────────────────────────────────────────
 \chapter{Frontend Angular et Exp\'erience Utilisateur}
 
@@ -900,6 +968,7 @@ Le frontend reprend fid\`element la maquette Figma valid\'ee en semaine~1 : dire
 \toprule
 \textbf{\'Ecran} & \textbf{Contenu} \\
 \midrule
+Tableau de bord & Vue d'ensemble --- KPIs globaux et derniers documents d\'epos\'es \\
 Documents & Dropzone d'upload (\texttt{documents-api}), rang\'ee de KPIs, tableau des documents avec statuts hash/OCR/SIEM par ligne \\
 Piste d'audit & Liste chronologique des \'ev\'enements \texttt{audit-service} (\texttt{GET /api/audit}) \\
 Notifications & Historique des e-mails envoy\'es (\texttt{GET /api/notifications}) \\
@@ -913,9 +982,44 @@ D\'etail d'un document & Hachage SHA-256, position dans la cha\^ine, texte OCR, 
 
 \begin{figure}[H]
   \centering
+  \figureOuPlaceholder{screen_tableau_de_bord.png}{Capture d'\'ecran --- Tableau de bord (\`a fournir avant remise finale)}{0.9\textwidth}
+  \caption{\'Ecran Tableau de bord --- vue d'ensemble du pipeline CDC}
+  \label{fig:screen-dashboard}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
   \figureOuPlaceholder{screen_documents.png}{Capture d'\'ecran --- \'ecran Documents (\`a fournir avant remise finale)}{0.9\textwidth}
   \caption{\'Ecran Documents --- dropzone, KPIs et tableau des statuts}
   \label{fig:screen-documents}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \figureOuPlaceholder{screen_piste_audit.png}{Capture d'\'ecran --- Piste d'audit (\`a fournir avant remise finale)}{0.9\textwidth}
+  \caption{\'Ecran Piste d'audit --- \'ev\'enements consomm\'es depuis le flux CDC}
+  \label{fig:screen-audit}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \figureOuPlaceholder{screen_notifications.png}{Capture d'\'ecran --- Notifications (\`a fournir avant remise finale)}{0.9\textwidth}
+  \caption{\'Ecran Notifications --- historique des e-mails envoy\'es}
+  \label{fig:screen-notifications}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \figureOuPlaceholder{screen_alertes_siem.png}{Capture d'\'ecran --- Alertes SIEM (\`a fournir avant remise finale)}{0.9\textwidth}
+  \caption{\'Ecran Alertes SIEM --- anomalies d\'etect\'ees sur les d\'ep\^ots}
+  \label{fig:screen-siem}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \figureOuPlaceholder{screen_integrite.png}{Capture d'\'ecran --- Int\'egrit\'e (\`a fournir avant remise finale)}{0.9\textwidth}
+  \caption{\'Ecran Int\'egrit\'e --- registre de hachage cha\^in\'e}
+  \label{fig:screen-integrity}
 \end{figure}
 
 \begin{figure}[H]

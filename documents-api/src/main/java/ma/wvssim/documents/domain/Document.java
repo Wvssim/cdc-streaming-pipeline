@@ -77,4 +77,8 @@ public class Document {
     public OffsetDateTime getUploadedAt() {
         return uploadedAt;
     }
+
+    public void rename(String newFilename) {
+        this.filename = newFilename;
+    }
 }
