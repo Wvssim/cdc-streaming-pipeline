@@ -8,8 +8,9 @@
 %%  Type   : Rapport de stage de fin d'ann\'ee
 %%  IMPORTANT : Compiler avec XeLaTeX ou pdfLaTeX
 %%  D\'ependance suppl\'ementaire : package pgfgantt (fourni sur Overleaf)
-%%  Images : d\'epos\'ees dans docs/ et Assets/ ; sur Overleaf, les mettre
-%%  \`a plat au m\^eme niveau que ce fichier .tex (cf. \graphicspath ci-dessous).
+%%  Images : sur Overleaf, dossier Assets/ au meme niveau que ce fichier .tex (les logos
+%%  bismi/logo/6solutions restent a la racine, hors Assets/) ; \figureOuPlaceholder appelle
+%%  \includegraphics{Assets/...} en dur, cf. sa definition ci-dessous.
 %% ============================================================
 \documentclass[12pt,a4paper,openany]{report}
 
@@ -119,13 +120,12 @@
   language=JavaPlus
 }
 
-%% Fallback propre pour une figure absente (\`a fournir avant remise finale)
+%% Toutes les captures vivent dans Assets/, au meme niveau que ce fichier .tex sur Overleaf.
+%% \IfFileExists{Assets/#1} ne detecte pas fiablement les fichiers dans Assets/ sur Overleaf
+%% (contrairement a \includegraphics{Assets/#1} en dur, qui fonctionne) : on appelle donc
+%% \includegraphics directement, sans passer par une detection d'existence.
 \newcommand{\figureOuPlaceholder}[3]{%
-  \IfFileExists{#1}{%
-    \includegraphics[width=#3]{#1}%
-  }{%
-    \fbox{\parbox[c][4.5cm][c]{#3}{\centering\itshape #2}}%
-  }%
+  \includegraphics[width=#3]{Assets/#1}%
 }
 
 %% ============================================================
