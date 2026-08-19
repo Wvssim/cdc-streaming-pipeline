@@ -40,8 +40,8 @@ import static org.awaitility.Awaitility.await;
  * Postgres + Kafka + Kafka Connect/Debezium tournent dans des vrais containers Docker,
  * pilotes exactement comme en prod (meme init-scripts, meme config de connecteur).
  *
- * <p>UPDATE couvre aussi le cas INSERT (etape de depart du scenario), donc ce test a lui
- * seul remplit le "au moins 1 scenario INSERT -> evenement -> consommation -> assertion" de T6.1.
+ * <p>Chaque scenario (UPDATE, DELETE) part d'un INSERT, ce qui remplit a lui seul le
+ * "au moins 1 scenario INSERT -> evenement -> consommation -> assertion" de T6.1.
  */
 @Testcontainers
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
@@ -127,6 +127,20 @@ class AuditServiceE2ETest {
                 .untilAsserted(() -> assertThat(findAction(docId, "MISE_A_JOUR")).isPresent());
     }
 
+    @Test
+    void delete_produitEvenementCdcConsommeParAudit() throws Exception {
+        long docId = insertDocument("temporaire.pdf");
+        await().atMost(Duration.ofSeconds(30))
+                .pollInterval(Duration.ofSeconds(1))
+                .untilAsserted(() -> assertThat(findAction(docId, "CREATION")).isPresent());
+
+        // before est complet grace a REPLICA IDENTITY FULL : audit retrouve le doc_id malgre after=null
+        deleteDocument(docId);
+        await().atMost(Duration.ofSeconds(30))
+                .pollInterval(Duration.ofSeconds(1))
+                .untilAsserted(() -> assertThat(findAction(docId, "SUPPRESSION")).isPresent());
+    }
+
     private long insertDocument(String filename) throws Exception {
         try (Connection conn = DriverManager.getConnection(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword());
              Statement stmt = conn.createStatement()) {
@@ -143,6 +157,13 @@ class AuditServiceE2ETest {
         try (Connection conn = DriverManager.getConnection(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword());
              Statement stmt = conn.createStatement()) {
             stmt.executeUpdate("UPDATE public.documents SET filename = '" + newFilename + "' WHERE id = " + id);
+        }
+    }
+
+    private void deleteDocument(long id) throws Exception {
+        try (Connection conn = DriverManager.getConnection(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword());
+             Statement stmt = conn.createStatement()) {
+            stmt.executeUpdate("DELETE FROM public.documents WHERE id = " + id);
         }
     }
 
