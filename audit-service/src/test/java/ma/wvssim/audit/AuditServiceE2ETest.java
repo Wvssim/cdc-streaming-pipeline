@@ -2,6 +2,14 @@ package ma.wvssim.audit;
 
 import ma.wvssim.audit.domain.AuditLog;
 import ma.wvssim.audit.domain.AuditLogRepository;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.serialization.StringDeserializer;
+import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,8 +37,10 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Properties;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -139,6 +149,50 @@ class AuditServiceE2ETest {
         await().atMost(Duration.ofSeconds(30))
                 .pollInterval(Duration.ofSeconds(1))
                 .untilAsserted(() -> assertThat(findAction(docId, "SUPPRESSION")).isPresent());
+    }
+
+    @Test
+    void messageInvalide_partEnDltSansBloquerLesMessagesValides() throws Exception {
+        // publie directement sur le topic source un message illisible (pas du JSON Debezium) :
+        // AuditService.parse() leve, DefaultErrorHandler retente 2 fois puis DeadLetterPublishingRecoverer
+        // republie sur le topic suffixe "-dlt" (nommage par defaut de spring-kafka).
+        try (KafkaProducer<String, String> producer = rawProducer()) {
+            producer.send(new ProducerRecord<>("docs.public.documents", "ceci n'est pas un evenement Debezium valide")).get();
+        }
+
+        try (KafkaConsumer<String, String> dltConsumer = rawConsumer("dlt-test-consumer")) {
+            dltConsumer.subscribe(List.of("docs.public.documents-dlt"));
+            await().atMost(Duration.ofSeconds(30))
+                    .pollInterval(Duration.ofSeconds(1))
+                    .untilAsserted(() -> {
+                        ConsumerRecords<String, String> records = dltConsumer.poll(Duration.ofSeconds(1));
+                        assertThat(records.count()).isGreaterThan(0);
+                    });
+        }
+
+        // le pipeline n'est pas bloque : un evenement valide poste juste apres est toujours traite
+        long docId = insertDocument("apres-dlt.pdf");
+        await().atMost(Duration.ofSeconds(30))
+                .pollInterval(Duration.ofSeconds(1))
+                .untilAsserted(() -> assertThat(findAction(docId, "CREATION")).isPresent());
+    }
+
+    private KafkaProducer<String, String> rawProducer() {
+        Properties props = new Properties();
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, KAFKA.getBootstrapServers());
+        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+        return new KafkaProducer<>(props);
+    }
+
+    private KafkaConsumer<String, String> rawConsumer(String groupId) {
+        Properties props = new Properties();
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, KAFKA.getBootstrapServers());
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
+        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+        return new KafkaConsumer<>(props);
     }
 
     private long insertDocument(String filename) throws Exception {
