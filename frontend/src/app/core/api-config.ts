@@ -2,6 +2,7 @@
 // notification-service 8084, blockchain-service 8085, siem-service 8086, ocr-service 8087).
 // Front en dev sur :4200, CORS ouvert côté services pour cette origine.
 export const API = {
+  auth: 'http://localhost:8081/api/auth',
   documents: 'http://localhost:8081/api/documents',
   audit: 'http://localhost:8082/api/audit',
   notifications: 'http://localhost:8084/api/notifications',

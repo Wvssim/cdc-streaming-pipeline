@@ -60,7 +60,7 @@ Apache Tika + tess4j · Testcontainers · Docker Compose · GitHub Actions.
 | **S3** | Valider le pattern event-driven **de bout en bout** | `documents-api` (upload + Claim Check + Swagger), module `common`, `audit-service` | **Un upload API crée une ligne d'audit, sans appel direct entre services** | ✅ terminée |
 | **S4** | Répéter le pattern : **fan-out complet** + robustesse | `notification-service`, `blockchain-service`, `siem-service`, Dead Letter Topic | **1 upload → 4 services en parallèle ; message invalide → DLT sans blocage** | ✅ terminée |
 | **S5** | **OCR + frontend Angular** (indépendants : si l'OCR bloque, on avance sur le front) | `ocr-service` (Tika), app Angular conforme maquette (6 écrans) | **Démo complète pilotée depuis le navigateur** | ✅ terminée — Tika fait ; Tesseract câblé (dispatch sur `content_type`, binaire natif requis en local, non testé en CI) ; 7/7 écrans Angular branchés (Tableau de bord, Documents, Piste d'audit, Notifications, Alertes SIEM, Intégrité, Détail document) |
-| **S6** | Consolider, tester, préparer la soutenance (**tampon**) | Tests Testcontainers e2e, générateur de démo, sécurité JWT (si temps), README/diagrammes/rapport | **Scénario de démo répété avec succès + documentation finalisée** | ⬜ pas commencée |
+| **S6** | Consolider, tester, préparer la soutenance (**tampon**) | Tests Testcontainers e2e, générateur de démo, sécurité JWT (si temps), README/diagrammes/rapport | **Scénario de démo répété avec succès + documentation finalisée** | 🟡 en cours — T6.1 (tests e2e), T6.2 (générateur démo) et T6.3 (JWT) faits ; reste T6.4 (README/diagrammes), T6.5 (rapport), T6.6 (démo finale) |
 
 ---
 
@@ -244,9 +244,9 @@ sans bloquer le pipeline.*
 
 | # | Tâche | Est. | Dépend de | Definition of Done |
 |---|---|---|---|---|
-| **T6.1** | **Tests d'intégration Testcontainers** de bout en bout (Postgres + Kafka éphémères) : au moins 1 scénario `INSERT → événement → consommation → assertion`. | 2 ½j | Jalons S3/S4 | `mvn verify` lance le(s) test(s) Testcontainers et ils passent en CI. |
-| **T6.2** | **Générateur de données** pour la démo live (script SQL/CLI ou `@Scheduled` désactivable) qui crée des documents variés déclenchant les 3 règles SIEM. | 1 ½j | Jalon S4 | Lancer le générateur remplit la plateforme et déclenche des alertes de façon reproductible. |
-| **T6.3** | **Sécurité basique** Spring Security + JWT (login + protection des endpoints) — **si le temps le permet** (Should). | 1 ½j | — | Les endpoints REST exigent un JWT valide ; le login renvoie un token. |
+| **T6.1** | **Tests d'intégration Testcontainers** de bout en bout (Postgres + Kafka éphémères) : au moins 1 scénario `INSERT → événement → consommation → assertion`. | 2 ½j | Jalons S3/S4 | `mvn verify` lance le(s) test(s) Testcontainers et ils passent en CI. **✅ Fait.** |
+| **T6.2** | **Générateur de données** pour la démo live (script SQL/CLI ou `@Scheduled` désactivable) qui crée des documents variés déclenchant les 3 règles SIEM. | 1 ½j | Jalon S4 | Lancer le générateur remplit la plateforme et déclenche des alertes de façon reproductible. **✅ Fait.** |
+| **T6.3** | **Sécurité basique** Spring Security + JWT (login + protection des endpoints) — **si le temps le permet** (Should). | 1 ½j | — | Les endpoints REST exigent un JWT valide ; le login renvoie un token. **✅ Fait** — `documents-api` émet le token (utilisateur unique en dur), les 6 services le valident avec le même secret partagé, frontend Angular branché (login, interceptor, guard, logout). Pas encore vérifié en conditions réelles (Docker indisponible pendant l'implémentation) : à valider avant la démo. |
 | **T6.4** | **README** (badge CI, schéma d'archi, instructions `cd infra && docker compose up`), **diagrammes** (flux, séquence) et **documentation technique** finalisés. | 1 ½j | — | Un lecteur externe peut démarrer le projet en suivant le README ; les diagrammes sont à jour. |
 | **T6.5** | **Rapport PFE** finalisé (intègre cahier des charges, architecture, choix, résultats, perspectives). | 2 ½j | — | Le rapport est complet et relu. |
 | **T6.6** | 🏁 **JALON** : **répétition du scénario de démonstration** de bout en bout (upload → 5 services → écrans Angular). | 1 ½j | Tout | La démo se déroule sans accroc, chronométrée, sur une base propre. |

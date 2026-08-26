@@ -23,3 +23,12 @@ minio:
   access-key: minioadmin
   secret-key: minioadmin
   bucket: documents
+
+app:
+  security:
+    # Utilisateur unique en dur (demo/soutenance) : pas de table users, hors perimetre.
+    # Le meme JWT_SECRET doit etre partage par les 6 services (pas de gateway central).
+    username: ${AUTH_USERNAME:wassim}
+    password-hash: ${AUTH_PASSWORD_HASH:$2a$10$WfuQ1zBMtrudtB9heplDWumzmCG3ZcxiqMT/dYTnDArcILzKOXVxO}
+    jwt-secret: ${JWT_SECRET:changeme-jwt-secret-cdc-streaming-pipeline-emsi-2026}
+    jwt-ttl-minutes: ${JWT_TTL_MINUTES:480}

@@ -70,14 +70,18 @@ java -jar notification-service/target/notification-service-0.0.1-SNAPSHOT.jar &
 java -jar blockchain-service/target/blockchain-service-0.0.1-SNAPSHOT.jar &
 java -jar siem-service/target/siem-service-0.0.1-SNAPSHOT.jar &
 
-# 4. Déposer un document
-curl -F "file=@monfichier.pdf" -F "uploadedBy=demo" http://localhost:8081/api/documents
+# 4. Se connecter (les endpoints /api/** exigent un JWT, sauf /api/auth/login — voir « Sécurité »)
+TOKEN=$(curl -s -X POST http://localhost:8081/api/auth/login \
+  -H "Content-Type: application/json" -d '{"username":"wassim","password":"wassim2026"}' | jq -r .token)
 
-# 5. Vérifier le fan-out : le même événement déclenche les 4 services en parallèle
-curl http://localhost:8082/api/audit
-curl http://localhost:8084/api/notifications
-curl http://localhost:8085/api/integrity
-curl http://localhost:8086/api/alerts
+# 5. Déposer un document
+curl -H "Authorization: Bearer $TOKEN" -F "file=@monfichier.pdf" -F "uploadedBy=demo" http://localhost:8081/api/documents
+
+# 6. Vérifier le fan-out : le même événement déclenche les 4 services en parallèle
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8082/api/audit
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8084/api/notifications
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8085/api/integrity
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8086/api/alerts
 ```
 
 Enregistrement du connecteur Debezium : voir la section « Commandes » de
@@ -92,6 +96,26 @@ Enregistrement du connecteur Debezium : voir la section « Commandes » de
 | MinIO Console | http://localhost:9001 |
 | MailHog | http://localhost:8025 |
 
+## Sécurité (JWT)
+
+Les endpoints `/api/**` des 6 services exigent un JWT valide (`Authorization: Bearer <token>`),
+sauf `POST /api/auth/login` — seul point d'entrée pour s'authentifier, exposé par `documents-api`.
+
+- **Identifiants de démo** (utilisateur unique en dur, pas de table `users` — hors périmètre) :
+  `wassim` / `wassim2026`.
+- Chaque service valide le token lui-même avec le même secret partagé : pas de gateway central
+  (cf. « Périmètre exclu » dans `docs/ARCHITECTURE.md`). Les 6 services tournent en local (pas de
+  conteneurs Docker pour eux), donc la valeur par défaut codée dans chaque `application.yml`
+  suffit pour la démo — rien à configurer.
+- Variables d'environnement (à garder identiques sur les 6 services pour `JWT_SECRET`) :
+  - `JWT_SECRET` — secret HMAC partagé (valeur de démo par défaut, à changer en prod).
+  - `JWT_TTL_MINUTES` — durée de validité du token (défaut `480`, soit 8h).
+  - `AUTH_USERNAME` / `AUTH_PASSWORD_HASH` (uniquement sur `documents-api`) — identifiant et hash
+    bcrypt du mot de passe de démo.
+- Le frontend Angular gère la connexion (écran `/login`), stocke le token et l'attache
+  automatiquement aux appels vers les 6 APIs (interceptor HTTP) ; un guard de route redirige vers
+  `/login` si non connecté.
+
 ## Avancement
 
 - ✅ Infrastructure et socle CDC (Docker Compose, connecteur Debezium, CI)
@@ -103,7 +127,9 @@ Enregistrement du connecteur Debezium : voir la section « Commandes » de
   pour les images (binaire natif requis pour l'activer, voir « OCR images » ci-dessous)
 - ✅ Frontend Angular — design system + 7 écrans (Tableau de bord, Documents, Piste d'audit,
   Notifications, Alertes SIEM, Intégrité, Détail document) branchés sur les vraies APIs
-- ⬜ Tests d'intégration, sécurité JWT, consolidation
+- ✅ Tests d'intégration Testcontainers e2e, générateur de données de démo
+- ✅ Sécurité JWT sur les 6 services + frontend Angular (voir « Sécurité » ci-dessus)
+- ⬜ README/diagrammes finalisés, rapport PFE, répétition de la démo
 
 ### OCR images (Tesseract)
 

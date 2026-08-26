@@ -14,7 +14,8 @@ export type IconName =
   | 'download'
   | 'check-circle'
   | 'scan-text'
-  | 'chevron-right';
+  | 'chevron-right'
+  | 'log-out';
 
 @Component({
   selector: 'app-icon',
