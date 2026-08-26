@@ -37,3 +37,9 @@ minio:
 tesseract:
   datapath: ${TESSERACT_DATAPATH:tessdata}
   languages: ${TESSERACT_LANGUAGES:fra+eng}
+
+app:
+  security:
+    # Meme secret que documents-api (qui emet le token) : pas de gateway central.
+    jwt-secret: ${JWT_SECRET:changeme-jwt-secret-cdc-streaming-pipeline-emsi-2026}
+    jwt-ttl-minutes: ${JWT_TTL_MINUTES:480}
