@@ -81,6 +81,29 @@
     padding: var(--space-2);
   }
 
+  &__logout {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--gray-500);
+
+    app-icon {
+      width: 16px;
+      height: 16px;
+    }
+
+    &:hover {
+      background: var(--gray-100);
+      color: var(--gray-900);
+    }
+  }
+
   &__avatar {
     display: inline-flex;
     align-items: center;

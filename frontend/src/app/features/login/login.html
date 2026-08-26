@@ -1,0 +1,39 @@
+<div class="login">
+  <form class="login__card" (ngSubmit)="submit()">
+    <div class="login__logo-mark">GED</div>
+    <h1>Connexion</h1>
+    <p>Plateforme documentaire événementielle</p>
+
+    @if (error()) {
+      <div class="banner banner--danger">{{ error() }}</div>
+    }
+
+    <label class="login__field">
+      <span>Utilisateur</span>
+      <input
+        type="text"
+        name="username"
+        [ngModel]="username()"
+        (ngModelChange)="username.set($event)"
+        autocomplete="username"
+        required
+      />
+    </label>
+
+    <label class="login__field">
+      <span>Mot de passe</span>
+      <input
+        type="password"
+        name="password"
+        [ngModel]="password()"
+        (ngModelChange)="password.set($event)"
+        autocomplete="current-password"
+        required
+      />
+    </label>
+
+    <button type="submit" class="btn-primary login__submit" [disabled]="loading()">
+      {{ loading() ? 'Connexion…' : 'Se connecter' }}
+    </button>
+  </form>
+</div>
