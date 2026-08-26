@@ -9,8 +9,10 @@ Plateforme de dépôt et de traitement de documents, bâtie sur un **pipeline CD
 des 4 consommateurs légers + DLT, `ocr-service` Tika + dispatch Tesseract sur les images, frontend
 Angular avec les 7 écrans (Tableau de bord, Documents, Piste d'audit, Notifications, Alertes SIEM,
 Intégrité, Détail document) branchés sur les vraies APIs). Tesseract est câblé côté code mais nécessite
-un binaire natif installé sur la machine hôte pour être actif (non testé en CI). S6 (tests, JWT,
-consolidation) pas commencée.
+un binaire natif installé sur la machine hôte pour être actif (non testé en CI). S6 en cours :
+tests d'intégration Testcontainers (T6.1), générateur de données de démo (T6.2) et sécurité JWT sur
+les 6 services + frontend (T6.3) faits ; reste README/diagrammes (T6.4), rapport (T6.5) et
+répétition de la démo (T6.6).
 
 ## Le flux nominal — défini par l'encadrant, NON NÉGOCIABLE
 
@@ -71,6 +73,7 @@ Ces invariants sont aussi les points techniques à savoir défendre en soutenanc
 7. **Toute erreur de traitement part en Dead Letter Topic** (`DefaultErrorHandler` + `DeadLetterPublishingRecoverer`). Un message toxique ne doit jamais bloquer le pipeline.
 8. **La chaîne de hash est append-only.** `blockchain-service` maintient un **registre d'intégrité** (`hash_n = SHA256(hash_doc ‖ hash_{n-1})`) : un maillon existant ne se réécrit jamais. C'est un registre d'intégrité, **PAS une blockchain** publique.
 9. **L'événement naît du CDC, jamais d'un dual-write.** C'est le WAL de PostgreSQL (source unique de vérité) qui déclenche l'événement Kafka, jamais un code applicatif qui écrirait « en base puis dans Kafka ». L'événement n'existe donc que si la transaction a commité : le problème classique du **dual-write** est éliminé par construction.
+10. **Chaque service valide son JWT lui-même, pas de gateway central.** `documents-api` est le seul à émettre le token (`POST /api/auth/login`) ; les 6 services le vérifient indépendamment avec le même secret partagé (`JWT_SECRET`). Cohérent avec l'exclusion de Spring Cloud Gateway du périmètre.
 
 > Propriétés d'infrastructure qui en découlent, également défendables en soutenance : **snapshot initial puis streaming incrémental** (Debezium rejoue l'existant avant de suivre le WAL en continu) et **Kafka en mode KRaft, sans Zookeeper** (une brique d'infra en moins à opérer).
 
@@ -89,6 +92,7 @@ Ces invariants sont aussi les points techniques à savoir défendre en soutenanc
 | MailHog | latest | SMTP de dev, interface web, zéro config |
 | Kafbat UI | latest | Visualiser les topics et les messages en live (indispensable pour la démo) |
 | Apache Tika + tess4j | — | Extraction de texte (PDF/DOCX puis images) |
+| Spring Security + jjwt | — | JWT partagé (HS256) validé par chaque service, pas de gateway central |
 | Testcontainers | — | Tests d'intégration avec Postgres + Kafka éphémères |
 | Docker Compose | — | Toute l'infra en local |
 | GitHub Actions | — | CI : `mvn verify` à chaque push |
