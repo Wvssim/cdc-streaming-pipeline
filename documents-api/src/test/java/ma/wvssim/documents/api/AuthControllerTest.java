@@ -3,15 +3,14 @@ package ma.wvssim.documents.api;
 import ma.wvssim.common.security.JwtService;
 import ma.wvssim.documents.security.SecurityProperties;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Duration;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class AuthControllerTest {
 
@@ -24,7 +23,7 @@ class AuthControllerTest {
 
     @Test
     void correctCredentialsReturnAUsableToken() {
-        LoginResponse response = controller.login(new LoginRequest("wassim", "wassim2026"));
+        LoginResponse response = controller.login(new LoginRequest("wassim", "wassim2026")).getBody();
 
         assertNotNull(response.token());
         JwtService verifier = new JwtService(PROPERTIES.jwtSecret(), Duration.ofMinutes(60));
@@ -33,11 +32,11 @@ class AuthControllerTest {
 
     @Test
     void wrongPasswordIsRejected() {
-        assertThrows(ResponseStatusException.class, () -> controller.login(new LoginRequest("wassim", "mauvais-mdp")));
+        assertEquals(HttpStatus.UNAUTHORIZED, controller.login(new LoginRequest("wassim", "mauvais-mdp")).getStatusCode());
     }
 
     @Test
     void unknownUsernameIsRejected() {
-        assertThrows(ResponseStatusException.class, () -> controller.login(new LoginRequest("inconnu", "wassim2026")));
+        assertEquals(HttpStatus.UNAUTHORIZED, controller.login(new LoginRequest("inconnu", "wassim2026")).getStatusCode());
     }
 }
