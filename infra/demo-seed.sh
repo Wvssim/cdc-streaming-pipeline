@@ -9,10 +9,13 @@
 # documents-api demarre en local (port 8081 par defaut).
 #
 # Usage : ./infra/demo-seed.sh   (ou DOCUMENTS_API_URL=http://localhost:8081 ./infra/demo-seed.sh)
+# Identifiants : DEMO_USER / DEMO_PASSWORD (defaut wassim / wassim2026), memes que le front.
 
 set -euo pipefail
 
 API_URL="${DOCUMENTS_API_URL:-http://localhost:8081}"
+DEMO_USER="${DEMO_USER:-wassim}"
+DEMO_PASSWORD="${DEMO_PASSWORD:-wassim2026}"
 
 TMP_DIR=$(mktemp -d)
 trap 'rm -rf "$TMP_DIR"' EXIT
@@ -25,14 +28,28 @@ extract_field() {
   echo "$1" | grep -o "\"$2\":\"[^\"]*\"" | head -1 | cut -d'"' -f4
 }
 
+# Les endpoints sont proteges par JWT (T6.3) : on recupere un token via /api/auth/login.
+login_response=$(curl -sf -X POST "$API_URL/api/auth/login" \
+  -H "Content-Type: application/json" \
+  -d "{\"username\":\"${DEMO_USER}\",\"password\":\"${DEMO_PASSWORD}\"}") || {
+  echo "login refuse sur $API_URL (documents-api demarre ? identifiants DEMO_USER/DEMO_PASSWORD corrects ?)" >&2
+  exit 1
+}
+TOKEN=$(extract_field "$login_response" "token")
+if [ -z "$TOKEN" ]; then
+  echo "aucun token dans la reponse de login : $login_response" >&2
+  exit 1
+fi
+
 upload() {
   local file="$1" uploaded_by="$2"
   curl -sf -X POST "$API_URL/api/documents" \
+    -H "Authorization: Bearer $TOKEN" \
     -F "file=@${file}" \
     -F "uploadedBy=${uploaded_by}"
 }
 
-if ! curl -sf -o /dev/null "$API_URL/api/documents"; then
+if ! curl -sf -o /dev/null -H "Authorization: Bearer $TOKEN" "$API_URL/api/documents"; then
   echo "documents-api injoignable sur $API_URL (est-il demarre ?)" >&2
   exit 1
 fi
