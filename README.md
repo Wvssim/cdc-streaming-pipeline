@@ -207,22 +207,20 @@ Pour l'activer :
 
 ## Avancement
 
-- ✅ Infrastructure et socle CDC (Docker Compose, connecteur Debezium, CI)
-- ✅ `documents-api` — upload, Claim Check MinIO, `PUT`/`DELETE` (événements CDC `UPDATE`/`DELETE`)
-- ✅ `audit-service` — premier consommateur, jalon prouvé (upload → ligne d'audit automatique)
-- ✅ `notification-service`, `blockchain-service`, `siem-service` — fan-out complet + Dead Letter
+- Infrastructure et socle CDC (Docker Compose, connecteur Debezium, CI)
+- `documents-api` — upload, Claim Check MinIO, `PUT`/`DELETE` (événements CDC `UPDATE`/`DELETE`)
+- `audit-service` — premier consommateur, jalon prouvé (upload → ligne d'audit automatique)
+- `notification-service`, `blockchain-service`, `siem-service` — fan-out complet + Dead Letter
   Topic (1 upload → 4 services en parallèle, message invalide isolé en DLT)
-- ✅ `ocr-service` — extraction via Apache Tika (PDF/DOCX) ; dispatch Tesseract câblé pour les
+- `ocr-service` — extraction via Apache Tika (PDF/DOCX) ; dispatch Tesseract câblé pour les
   images (binaire natif requis pour l'activer)
-- ✅ Frontend Angular — design system + 7 écrans (Tableau de bord, Documents, Piste d'audit,
+- Frontend Angular — design system + 7 écrans (Tableau de bord, Documents, Piste d'audit,
   Notifications, Alertes SIEM, Intégrité, Détail document) branchés sur les vraies APIs
-- ✅ Tests d'intégration Testcontainers e2e, générateur de données de démo (S6 · T6.1 / T6.2)
-- ✅ Sécurité JWT sur les 6 services + frontend Angular (S6 · T6.3)
-- ✅ README / diagrammes / doc technique + OpenAPI/Swagger par service (S6 · T6.4)
-- ✅ Rapport finalisé (S6 · T6.5)
-- ✅ Répétition du scénario de démo, base propre, chronométrée (S6 · T6.6)
-
-**Projet terminé** — S2 à S6 livrées, jalon final rejoué le 31/08/2026.
+- Tests d'intégration Testcontainers e2e, générateur de données de démo (S6 · T6.1 / T6.2)
+- Sécurité JWT sur les 6 services + frontend Angular (S6 · T6.3)
+- README / diagrammes / doc technique + OpenAPI/Swagger par service (S6 · T6.4)
+- Rapport finalisé (S6 · T6.5)
+- Répétition du scénario de démo, base propre, chronométrée (S6 · T6.6)
 
 ## Build & tests
 
