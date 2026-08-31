@@ -38,6 +38,12 @@
             <artifactId>spring-boot-starter-kafka</artifactId>
         </dependency>
 
+        <!-- Doc OpenAPI + Swagger UI generees depuis les controleurs (RF-03) -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+        </dependency>
+
         <!-- Client S3 : recupere le fichier depuis MinIO pour calculer son SHA-256 -->
         <dependency>
             <groupId>io.minio</groupId>
