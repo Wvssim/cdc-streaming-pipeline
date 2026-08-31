@@ -9,7 +9,7 @@ import org.springframework.util.backoff.FixedBackOff;
 
 /**
  * Un message qui echoue systematiquement (JSON illisible, fichier illisible par Tika, MinIO
- * indisponible) est retente 2 fois puis republie sur {@code docs.public.documents.DLT} au lieu
+ * indisponible) est retente 2 fois puis republie sur {@code docs.public.documents-dlt} au lieu
  * de bloquer indefiniment le consumer.
  */
 @Configuration

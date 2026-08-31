@@ -294,7 +294,6 @@ Ce document retrace le contexte et la probl\'ematique, l'analyse des besoins, l'
   KRaft   & \textit{Kafka Raft} --- consensus interne de Kafka, sans Zookeeper \\
   OCR     & \textit{Optical Character Recognition} \\
   ORM     & Object-Relational Mapping \\
-  PFE     & Projet de Fin d'\'Etudes \\
   REST    & Representational State Transfer \\
   RF / RNF & Besoin Fonctionnel / Besoin Non-Fonctionnel \\
   SIEM    & \textit{Security Information and Event Management} \\
@@ -386,7 +385,7 @@ Les besoins fonctionnels sont identifi\'es par des codes \textbf{RF-XX} et prior
   \endfoot
   RF-01 & D\'eposer un document via l'interface Angular (upload multipart) & M & $\checkmark$ \\[3pt]
   RF-02 & Enregistrer les m\'etadonn\'ees en PostgreSQL et le fichier dans MinIO (\emph{Claim Check}) & M & $\checkmark$ \\[3pt]
-  RF-03 & Exposer des endpoints REST document\'es (d\'ep\^ot, liste, d\'etail, t\'el\'echargement) & M & $\checkmark$\footnotemark \\[3pt]
+  RF-03 & Exposer des endpoints REST document\'es (d\'ep\^ot, liste, d\'etail, renommage, suppression) & M & $\checkmark$\footnotemark \\[3pt]
   RF-04 & Consulter la liste des documents et leur statut consolid\'e (hachage, OCR, alertes) & S & $\checkmark$ \\[3pt]
   RF-05 & Capturer automatiquement chaque insertion via Debezium, sans appel direct API $\to$ consommateurs & M & $\checkmark$ \\[3pt]
   RF-06 & Publier chaque changement en enveloppe Debezium sur le topic \texttt{docs.public.documents} & M & $\checkmark$ \\[3pt]
@@ -404,7 +403,7 @@ Les besoins fonctionnels sont identifi\'es par des codes \textbf{RF-XX} et prior
   RF-18 & Permettre le rejeu du topic pour reconstituer l'\'etat d'un consommateur & C & $\checkmark$ \\[3pt]
   RF-19 & D\'emontrer l'extensibilit\'e (ajout d'un 7\textsuperscript{e} consommateur sans r\'egression) & C & $\checkmark$\footnotemark \\
 \end{longtable}
-\footnotetext[1]{Documentation OpenAPI/Swagger int\'egr\'ee \`a chaque service (springdoc-openapi).}
+\footnotetext[1]{Chaque service expose sa documentation OpenAPI (\texttt{/v3/api-docs}) et une interface Swagger UI (\texttt{/swagger-ui.html}) g\'en\'er\'ees par springdoc-openapi 3.x depuis les contr\^oleurs (cf. \S\ref{sec:openapi}).}
 \footnotetext[2]{D\'emontr\'e par l'ajout \`a blanc d'un consumer group suppl\'ementaire sur le topic existant, sans modification des cinq services en place (cf. \S\ref{sec:extensibilite}).}
 
 \section{Besoins Non-Fonctionnels}
@@ -562,14 +561,14 @@ Build                  & Maven multi-module                                     
 Framework backend      & Spring Boot (\texttt{spring-boot-starter-kafka}, Data JPA, Web) & 4.1.0 \\
 Frontend               & Angular                                                  & stable \\
 CDC                    & Debezium, connecteur PostgreSQL, plugin \texttt{pgoutput} & 3.5 \\
-Streaming              & Apache Kafka en mode KRaft                               & 4.1 (IV1) \\
+Streaming              & Apache Kafka en mode KRaft                               & 4.1.0 \\
 Base de donn\'ees      & PostgreSQL (\texttt{wal\_level=logical}, \texttt{REPLICA IDENTITY FULL}) & 17 \\
 Stockage objet         & MinIO (compatible S3)                                    & latest \\
 SMTP de d\'eveloppement & MailHog                                                 & latest \\
 Observabilit\'e Kafka  & Kafbat UI                                                & 1.5.0 \\
 Extraction de texte    & Apache Tika + tess4j (Tesseract)                         & --- \\
 Tests d'int\'egration  & Testcontainers (Postgres + Kafka \'eph\'em\`eres)        & --- \\
-Documentation API      & springdoc-openapi (Swagger UI)                           & --- \\
+Documentation API      & springdoc-openapi (OpenAPI 3 + Swagger UI par service)   & 3.1.0 \\
 S\'ecurit\'e           & Spring Security + JWT                                    & --- \\
 Conteneurisation       & Docker / Docker Compose                                  & --- \\
 Int\'egration continue & GitHub Actions (\texttt{mvn verify})                     & --- \\
@@ -871,6 +870,25 @@ public void onDocumentEvent(String rawEvent) {
 
 Endpoint : \texttt{GET /api/ocr/\{docId\}}. Le champ \texttt{engine} (\texttt{"tika"} ou \texttt{"tesseract"}) trace la m\'ethode d'extraction utilis\'ee pour chaque document, utile en support.
 
+\section{Documentation des API --- OpenAPI / Swagger}
+\label{sec:openapi}
+
+Chaque service embarque \texttt{springdoc-openapi-starter-webmvc-ui} (branche 3.x, celle qui suit Spring Boot~4). La d\'ependance est d\'eclar\'ee une fois dans le \texttt{dependencyManagement} du POM parent puis h\'erit\'ee par les six modules, sans num\'ero de version dans les POM enfants. springdoc inspecte les contr\^oleurs Spring MVC au d\'emarrage et publie, sans code suppl\'ementaire~:
+
+\begin{itemize}[leftmargin=1.5em]
+  \item \texttt{/v3/api-docs} --- le contrat OpenAPI~3 au format JSON~;
+  \item \texttt{/swagger-ui.html} --- l'explorateur Swagger UI, avec le sch\'ema des requ\^etes/r\'eponses d\'eduit des \texttt{record} DTO.
+\end{itemize}
+
+Le titre et la version de chaque API sont port\'es par une annotation \texttt{@OpenAPIDefinition} sur la classe \texttt{*Application}. Ces deux routes sont les seules, avec \texttt{POST /api/auth/login}, \`a \^etre plac\'ees en \texttt{permitAll()} dans la cha\^ine Spring Security~: la documentation reste consultable sans jeton, les endpoints m\'etier restent prot\'eg\'es (\S\ref{sec:securite-jwt}).
+
+\begin{figure}[H]
+  \centering
+  \figureOuPlaceholder{swagger_ui_documents_api.png}{Swagger UI de documents-api (\`a ins\'erer)}{0.9\textwidth}
+  \caption{Swagger UI de \texttt{documents-api} (\texttt{/swagger-ui.html})~: les endpoints \texttt{/api/documents} (d\'ep\^ot, liste, d\'etail, renommage, suppression) et \texttt{/api/auth/login}, document\'es automatiquement par springdoc}
+  \label{fig:swagger-ui}
+\end{figure}
+
 \section{Gestion d'Erreurs --- Dead Letter Topic}
 \label{sec:idempotence}
 
@@ -884,7 +902,7 @@ public DefaultErrorHandler errorHandler(KafkaTemplate<Object, Object> template) 
 }
 \end{lstlisting}
 
-Deux tentatives espac\'ees d'une seconde, puis republication sur \texttt{docs.public.documents.dlt}. Le \texttt{DeadLetterPublishingRecoverer} nomme le DLT \`a partir du \textbf{topic source}, non du consumer group : les cinq consommateurs partagent donc le m\^eme topic de secours, ce que confirme la vue des topics Kafbat UI post-S4 (figure~\ref{fig:kafka-topics-dlt}).
+Deux tentatives espac\'ees d'une seconde, puis republication sur \texttt{docs.public.documents-dlt} (suffixe \texttt{-dlt} par d\'efaut sous Spring Kafka). Le \texttt{DeadLetterPublishingRecoverer} nomme le DLT \`a partir du \textbf{topic source}, non du consumer group : les cinq consommateurs partagent donc le m\^eme topic de secours, ce que confirme la vue des topics Kafbat UI post-S4 (figure~\ref{fig:kafka-topics-dlt}).
 
 \textbf{Idempotence} : chaque consommateur d\'edu-plique sur une cl\'e naturelle propre \`a son domaine --- \texttt{event\_id} (LSN) pour l'audit, \texttt{doc\_id} pour la blockchain, les notifications, l'OCR et le SIEM. Une re-livraison Kafka ne produit donc jamais de double audit, de double e-mail ni de double maillon de hachage.
 
@@ -1034,15 +1052,30 @@ D\'etail d'un document & Hachage SHA-256, position dans la cha\^ine, texte OCR, 
 
 \section{Tests d'Int\'egration Testcontainers}
 
-Un sc\'enario de bout en bout d\'emarre un PostgreSQL et un Kafka \'eph\'em\`eres (Testcontainers), ins\`ere une ligne dans \texttt{documents}, attend la publication de l'\'ev\'enement et v\'erifie qu'\texttt{audit-service} a bien produit la ligne d'audit correspondante --- validant la cha\^ine CDC compl\`ete sans d\'ependre de l'infrastructure Docker Compose locale. Ce test s'ajoute aux tests unitaires purs d\'ej\`a pr\'esents sur chaque service (\texttt{AuditActionsTest}, \texttt{HashUtilTest}, \texttt{SiemRulesTest}, \texttt{StorageKeysTest}, \texttt{DebeziumEnvelopeTest}).
+Chaque service consommateur porte un test de bout en bout qui d\'emarre, via Testcontainers, un \textbf{PostgreSQL, un Kafka et un Kafka~Connect + Debezium r\'eels} (le m\^eme connecteur qu'en production), sans d\'ependre de l'infrastructure Docker Compose locale. Ces sc\'enarios couvrent~:
+
+\begin{itemize}[leftmargin=1.5em]
+  \item \texttt{audit-service} --- \texttt{INSERT} puis \texttt{UPDATE} sur \texttt{documents}, v\'erifi\'es jusqu'\`a \texttt{audit.audit\_log}~; un sc\'enario \texttt{DELETE} distinct v\'erifie que le \texttt{doc\_id} est retrouv\'e depuis \texttt{before} m\^eme quand \texttt{after} vaut \texttt{null} (gr\^ace \`a \texttt{REPLICA IDENTITY FULL})~;
+  \item \texttt{notification-service} --- l'e-mail est r\'eellement re\c{c}u par un conteneur MailHog~;
+  \item \texttt{blockchain-service} et \texttt{ocr-service} --- un fichier r\'eel est d\'epos\'e dans un MinIO \'eph\'em\`ere, son hachage et son texte sont extraits~;
+  \item \texttt{siem-service} --- un d\'ep\^ot \`a extension suspecte d\'eclenche l'alerte attendue~;
+  \item un sc\'enario \textbf{message invalide $\rightarrow$ DLT}~: un message non-JSON publi\'e sur le topic source atterrit dans \texttt{docs.public.documents-dlt} et le pipeline continue.
+\end{itemize}
+
+Ces tests s'ajoutent aux tests unitaires purs pr\'esents sur chaque service (\texttt{AuditActionsTest}, \texttt{HashUtilTest}, \texttt{SiemRulesTest}, \texttt{StorageKeysTest}, \texttt{DebeziumEnvelopeTest}, \texttt{JwtAuthFilterTest}) et tournent dans la CI GitHub Actions \`a chaque \emph{push}.
 
 \section{G\'en\'erateur de D\'emonstration}
 
 Un petit outil en ligne de commande d\'epose une s\'erie de documents vari\'es (tailles, extensions, horaires, cadence) afin de d\'eclencher de mani\`ere reproductible les trois r\`egles \texttt{siem-service} pendant une d\'emonstration live.
 
 \section{S\'ecurit\'e --- Spring Security et JWT}
+\label{sec:securite-jwt}
 
-Les endpoints de lecture (\texttt{GET /api/*}) exigent d\'esormais un jeton JWT valide, \'emis par un endpoint de connexion d\'edi\'e. Cette couche reste volontairement simple (pas de f\'ed\'eration d'identit\'e, cf. p\'erim\`etre exclu) mais couvre l'exigence RNF-09.
+Tous les endpoints \texttt{/api/**} des six services exigent un jeton JWT valide (\texttt{Authorization: Bearer}), \`a la seule exception de \texttt{POST /api/auth/login}. Ce point d'entr\'ee, expos\'e par \texttt{documents-api}, v\'erifie les identifiants (utilisateur unique en dur, mot de passe hach\'e en BCrypt) et renvoie un token sign\'e en HS256. \texttt{JwtService}, factoris\'e dans le module \texttt{common}, porte la g\'en\'eration et la validation~; chaque service instancie un \texttt{JwtAuthFilter} qui valide le token avec le \textbf{m\^eme secret partag\'e} (\texttt{JWT\_SECRET}), sans appeler \texttt{documents-api} --- coh\'erent avec l'invariant \og pas de gateway centrale \fg{} (\S\ref{chap:archi}). Cette couche reste volontairement simple (pas de f\'ed\'eration d'identit\'e, cf. p\'erim\`etre exclu) mais couvre l'exigence RNF-09.
+
+\begin{notebox}
+Un bug d\'ecouvert en conditions r\'eelles (et pas par les tests unitaires du contr\^oleur)~: un mauvais mot de passe renvoyait un \texttt{403} vide au lieu d'un \texttt{401}. La cause \'etait un \texttt{ResponseStatusException} qui d\'eclenchait un \texttt{forward} vers \texttt{/error}, lequel repassait par la cha\^ine Spring Security et se faisait bloquer par \texttt{anyRequest().authenticated()}. Corrig\'e en renvoyant directement un \texttt{ResponseEntity.status(401)} depuis le contr\^oleur. Un test de non-r\'egression traversant la vraie cha\^ine de filtres (\texttt{@WebMvcTest}) a \'et\'e ajout\'e.
+\end{notebox}
 
 \section{Extensibilit\'e --- D\'emonstration \`a Blanc}
 \label{sec:extensibilite}
@@ -1114,7 +1147,7 @@ S6 & 11 -- 21/08 & Sc\'enario de d\'emonstration r\'ep\'et\'e ; documentation fi
 
 \section{Bilan de la Marge}
 
-La semaine~6, pr\'evue comme tampon, a \'et\'e int\'egralement consacr\'ee aux t\^aches \emph{Should} restantes (Testcontainers, JWT) plut\^ot qu'\`a absorber du retard : les semaines~3 et~4 se sont d\'eroul\'ees plus vite que planifi\'e (le producteur, les quatre consommateurs et le Dead Letter Topic ont \'et\'e livr\'es en une semaine calendaire au lieu de deux), gr\^ace \`a la r\'eutilisation d'un gabarit identique (entit\'e/repository/service/contr\^oleur/\texttt{KafkaErrorHandlingConfig}) d'un service \`a l'autre.
+La semaine~6, pr\'evue comme tampon, a \'et\'e int\'egralement consacr\'ee aux t\^aches \emph{Should} restantes (Testcontainers, JWT) plut\^ot qu'\`a absorber du retard : le fan-out des quatre consommateurs et le Dead Letter Topic, pr\'evus sur la semaine~4, \'etaient fonctionnels d\`es le premier jour de son cr\'eneau, gr\^ace \`a la r\'eutilisation d'un gabarit identique (entit\'e/repository/service/contr\^oleur/\texttt{KafkaErrorHandlingConfig}) d'un service \`a l'autre.
 
 %% ── CHAPITRE 11 ───────────────────────────────────────────────
 \chapter{R\'esultats, D\'emonstration et Bilan}
@@ -1133,8 +1166,8 @@ La semaine~6, pr\'evue comme tampon, a \'et\'e int\'egralement consacr\'ee aux t
   CA-01 & D\'emarrage complet via \texttt{docker compose up} + enregistrement du connecteur & 7 conteneurs \texttt{healthy}, connecteur au statut \texttt{RUNNING} (fig.~\ref{fig:kafka-dashboard}) & $\checkmark$ \\[4pt]
   CA-02 & \texttt{INSERT} manuel dans \texttt{documents} & \'Ev\'enement visible dans Kafbat UI (fig.~\ref{fig:kafka-first-event}) & $\checkmark$ \\[4pt]
   CA-03 & Upload d'un document via l'API & M\'etadonn\'ees en base, fichier dans MinIO, ligne d'audit cr\'e\'ee sans appel direct & $\checkmark$ \\[4pt]
-  CA-04 & Upload unique & Quatre services d\'eclench\'es en parall\`ele (quatre consumer groups distincts) & $\checkmark$ \\[4pt]
-  CA-05 & Message invalide inject\'e sur le topic & Message redirig\'e vers \texttt{docs.public.documents.dlt}, flux principal non bloqu\'e & $\checkmark$ \\[4pt]
+  CA-04 & Upload unique & Cinq services d\'eclench\'es en parall\`ele (cinq consumer groups distincts, \emph{lag} \`a 0) & $\checkmark$ \\[4pt]
+  CA-05 & Message invalide inject\'e sur le topic & Message redirig\'e vers \texttt{docs.public.documents-dlt} (cinq entr\'ees, une par consommateur), flux principal non bloqu\'e & $\checkmark$ \\[4pt]
   CA-06 & Appel de l'endpoint de v\'erification d'int\'egrit\'e & Cha\^ine de hachage recalcul\'ee et coh\'erente & $\checkmark$ \\[4pt]
   CA-07 & D\'ep\^ots r\'ep\'et\'es hors plage horaire autoris\'ee & Alerte \texttt{HORAIRE\_INHABITUEL} d\'eclench\'ee & $\checkmark$ \\[4pt]
   CA-08 & Red\'emarrage d'un consommateur en cours de traitement & Aucun \'ev\'enement perdu, aucun doublon apr\`es reprise & $\checkmark$ \\
@@ -1144,16 +1177,19 @@ La semaine~6, pr\'evue comme tampon, a \'et\'e int\'egralement consacr\'ee aux t
 \section{Sc\'enario de D\'emonstration Rejou\'e}
 
 \begin{enumerate}
-  \item \textbf{D\'ep\^ot} --- depuis le navigateur, un document PDF est d\'epos\'e via l'interface Angular.
+  \item \textbf{Authentification} --- connexion \texttt{wassim} depuis l'\'ecran \texttt{/login} Angular ; un mauvais mot de passe renvoie bien \texttt{401}, un endpoint \texttt{/api/*} appel\'e sans jeton renvoie \texttt{403}.
+  \item \textbf{D\'ep\^ot} --- un document PDF est d\'epos\'e via l'interface Angular (jeton attach\'e automatiquement par l'interceptor).
   \item \textbf{\'Ev\'enement CDC} --- l'\'ev\'enement appara\^it dans Kafbat UI sur \texttt{docs.public.documents}.
-  \item \textbf{Notification} --- l'e-mail de confirmation appara\^it dans MailHog en moins de 5~secondes.
-  \item \textbf{Int\'egrit\'e} --- l'appel \`a l'endpoint de v\'erification confirme la coh\'erence de la cha\^ine.
-  \item \textbf{Audit et OCR} --- la ligne d'audit et le texte extrait sont consultables dans le frontend.
-  \item \textbf{Alerte SIEM} --- une rafale de d\'ep\^ots d\'eclenche volontairement l'alerte de fr\'equence.
+  \item \textbf{Fan-out} --- les cinq consumer groups traitent l'\'ev\'enement, \emph{lag} \`a 0 dans Kafbat UI.
+  \item \textbf{Notification} --- l'e-mail de confirmation appara\^it dans MailHog.
+  \item \textbf{Int\'egrit\'e} --- l'appel \`a \texttt{GET /api/integrity/verify} confirme la coh\'erence de la cha\^ine (\texttt{valid:true}).
+  \item \textbf{Audit et OCR} --- la ligne d'audit et le texte extrait (moteur \texttt{tika}) sont consultables dans le frontend.
+  \item \textbf{Alerte SIEM} --- le g\'en\'erateur de d\'emonstration d\'eclenche les trois r\`egles (fr\'equence, extension, horaire).
+  \item \textbf{R\'esilience} --- un message non-JSON inject\'e sur le topic source produit cinq entr\'ees dans \texttt{docs.public.documents-dlt} ; un d\'ep\^ot suivant est trait\'e normalement par les cinq services.
 \end{enumerate}
 
 \begin{donebox}[Jalon final]
-Ce sc\'enario a \'et\'e r\'ep\'et\'e avec succ\`es sur une base propre (\texttt{docker compose down -v}) en pr\'eparation de la soutenance du [\`a remplir].
+Sc\'enario rejou\'e avec succ\`es le 31~ao\^ut 2026 sur une base propre (\texttt{docker compose down -v} puis red\'emarrage complet~: 6~conteneurs d'infrastructure, connecteur Debezium \texttt{RUNNING}, 6~microservices et frontend). En r\'egime \'etabli, la latence \texttt{upload}~$\rightarrow$~dernier consommateur est d'environ \textbf{2,6~s} (audit \texttt{1,4~s}, notification \texttt{1,6~s}, blockchain \texttt{2,0~s}), sous la cible de 5~s (RNF-05)~; un d\'emarrage \`a froid ou une rafale de d\'ep\^ots peut faire monter ponctuellement ce d\'elai. Soutenance pr\'evue le [\`a remplir].
 \end{donebox}
 
 %% ── CHAPITRE 12 ───────────────────────────────────────────────

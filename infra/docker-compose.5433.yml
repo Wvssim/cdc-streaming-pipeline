@@ -1,0 +1,15 @@
+# Override optionnel : publie cdc-postgres sur le port hote 5433 au lieu de 5432.
+# A utiliser quand un autre PostgreSQL occupe deja 5432 sur la machine.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.5433.yml up -d
+#
+# Cote reseau Docker rien ne change : connect/debezium joignent toujours cdc-postgres:5432.
+# Seul l'acces depuis l'hote bascule sur 5433 -> lancer les 6 services avec
+#   SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5433/docdb
+# (run-services.ps1 / run-services.sh le font via la variable CDC_PG_PORT=5433).
+
+services:
+  cdc-postgres:
+    # !override : remplace la liste de ports du fichier de base au lieu de s'y ajouter
+    ports: !override
+      - "5433:5432"

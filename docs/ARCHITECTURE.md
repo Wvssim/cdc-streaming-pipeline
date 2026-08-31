@@ -5,14 +5,15 @@
 Plateforme de dépôt et de traitement de documents, bâtie sur un **pipeline CDC event-driven** : PostgreSQL → Debezium → Kafka → 5 microservices consommateurs indépendants.
 
 **PFE** — Wassim Lazim, EMSI Casablanca. Encadrant : Pr. Bekkali Mohamed (spécialité JEE).
-**Durée** : 6 semaines. **État actuel** : S2 à S5 terminées (infra CDC, `documents-api`, fan-out complet
-des 4 consommateurs légers + DLT, `ocr-service` Tika + dispatch Tesseract sur les images, frontend
-Angular avec les 7 écrans (Tableau de bord, Documents, Piste d'audit, Notifications, Alertes SIEM,
-Intégrité, Détail document) branchés sur les vraies APIs). Tesseract est câblé côté code mais nécessite
-un binaire natif installé sur la machine hôte pour être actif (non testé en CI). S6 en cours :
-tests d'intégration Testcontainers (T6.1), générateur de données de démo (T6.2) et sécurité JWT sur
-les 6 services + frontend (T6.3) faits ; reste README/diagrammes (T6.4), rapport (T6.5) et
-répétition de la démo (T6.6).
+**Durée** : 6 semaines. **État actuel** : **S2 à S6 terminées**. Infra CDC, `documents-api`, fan-out
+complet des 4 consommateurs légers + DLT, `ocr-service` Tika + dispatch Tesseract sur les images,
+frontend Angular avec les 7 écrans (Tableau de bord, Documents, Piste d'audit, Notifications, Alertes
+SIEM, Intégrité, Détail document) branchés sur les vraies APIs. Tesseract est câblé côté code mais
+nécessite un binaire natif installé sur la machine hôte pour être actif (non testé en CI). S6 :
+tests d'intégration Testcontainers (T6.1), générateur de données de démo (T6.2), sécurité JWT sur les
+6 services + frontend (T6.3), README/diagrammes (T6.4, voir [`diagrammes.md`](diagrammes.md)),
+documentation OpenAPI/Swagger par service (springdoc-openapi 3.1.0), rapport (T6.5) et répétition du
+scénario de démo (T6.6, rejoué le 31/08/2026 sur base propre) faits.
 
 ## Le flux nominal — défini par l'encadrant, NON NÉGOCIABLE
 
@@ -60,11 +61,13 @@ documents-api ──── métadonnées ──▶ PostgreSQL (public.documents)
 
 Angular = frontend (pas un microservice). Debezium = connecteur **configuré**, pas codé. Kafka, PostgreSQL, MinIO, MailHog, Kafbat UI = infrastructure.
 
+> Version en diagrammes (architecture, séquences upload/DLT/JWT, modèle de données) : [`diagrammes.md`](diagrammes.md).
+
 ## Invariants — les règles qu'on ne casse jamais
 
 Ces invariants sont aussi les points techniques à savoir défendre en soutenance : chacun porte une justification, pas seulement une règle.
 
-1. **Claim Check pattern** — le fichier binaire ne transite JAMAIS par Kafka ni par PostgreSQL. Postgres ne stocke que les métadonnées + la clé de stockage MinIO. Un message Kafka fait 1 Mo par défaut ; un PDF de 18 Mo casserait le broker. Le service qui a besoin du fichier (`ocr-service`) va le chercher avec la clé.
+1. **Claim Check pattern** — le fichier binaire ne transite JAMAIS par Kafka ni par PostgreSQL. Postgres ne stocke que les métadonnées + la clé de stockage MinIO. Un message Kafka fait 1 Mo par défaut ; un PDF de 18 Mo casserait le broker. Les services qui ont besoin du fichier (`ocr-service` pour le texte, `blockchain-service` pour le hash) vont le chercher dans MinIO avec la clé.
 2. **Aucun appel HTTP direct entre microservices.** Les consommateurs ne connaissent QUE le topic Kafka. Ils ignorent l'existence de `documents-api` et l'existence les uns des autres. Si tu es tenté d'écrire un `RestTemplate` d'un service vers un autre, tu casses le sujet du PFE.
 3. **Un consumer group distinct par service (fan-out).** C'est ce qui fait que les 5 services reçoivent TOUS le même événement, au lieu de se le partager. Conséquence directe : **extensibilité** — ajouter un 7ᵉ service, c'est ajouter un consumer group de plus sur le topic, sans toucher à l'existant (ni à l'API, ni aux autres services).
 4. **Les consommateurs sont idempotents (at-least-once).** Un même événement peut arriver deux fois (redémarrage, rééquilibrage). Traiter deux fois ne doit pas produire deux lignes d'audit ni deux e-mails — déduplication par identifiant de document / d'événement.
@@ -92,6 +95,7 @@ Ces invariants sont aussi les points techniques à savoir défendre en soutenanc
 | MailHog | latest | SMTP de dev, interface web, zéro config |
 | Kafbat UI | latest | Visualiser les topics et les messages en live (indispensable pour la démo) |
 | Apache Tika + tess4j | — | Extraction de texte (PDF/DOCX puis images) |
+| springdoc-openapi | **3.1.0** | OpenAPI 3 + Swagger UI par service (`/swagger-ui.html`, `/v3/api-docs`), branche 3.x = celle qui suit Spring Boot 4 |
 | Spring Security + jjwt | — | JWT partagé (HS256) validé par chaque service, pas de gateway central |
 | Testcontainers | — | Tests d'intégration avec Postgres + Kafka éphémères |
 | Docker Compose | — | Toute l'infra en local |
@@ -108,22 +112,26 @@ cdc-streaming-pipeline/
 │   │   └── 02-consumer-schemas.sql # schémas audit/notif/integrity/ocr/siem + leurs tables
 │   ├── connectors/
 │   │   └── postgres-source.json    # config du connecteur Debezium source
-│   └── register-connector.ps1      # enregistre le connecteur via l'API REST de Kafka Connect
+│   ├── register-connector.ps1      # enregistre le connecteur via l'API REST de Kafka Connect
+│   ├── run-services.ps1  / .sh     # lance (ou arrête) les 6 microservices en local
+│   └── demo-seed.sh                # générateur de données de démo (déclenche les 3 règles SIEM)
 ├── pom.xml                         # parent POM (dependencyManagement, modules)
-├── common/                         # DTO de l'enveloppe Debezium (before/after/op/ts_ms), désérialisation
+├── common/                         # enveloppe Debezium (before/after/op/ts_ms) + JwtService partagé
 ├── documents-api/
 ├── audit-service/
 ├── notification-service/
 ├── blockchain-service/
 ├── ocr-service/
 ├── siem-service/
-├── frontend/                       # Angular
+├── frontend/                       # Angular (7 écrans + login JWT)
+├── Assets/                         # captures d'écran (Kafbat, MailHog, écrans Angular) pour le rapport
 ├── docs/
 │   ├── ARCHITECTURE.md             # source de vérité (ce document)
+│   ├── diagrammes.md               # diagrammes Mermaid (archi, séquences, modèle de données)
 │   ├── cahier-des-charges.tex      # cahier des charges (LaTeX)
 │   ├── Rapport.tex                 # rapport de stage (LaTeX)
 │   ├── plan-6-semaines.md          # plan de réalisation détaillé
-│   └── maquette/                   # export de la maquette Figma (référence contractuelle du front)
+│   └── samples/                    # événement CDC réel capturé (fixture des tests de parsing)
 └── CLAUDE.md                       # pointeur vers docs/ARCHITECTURE.md (git-ignoré)
 ```
 
@@ -177,8 +185,14 @@ docker exec -it cdc-postgres psql -U cdc -d docdb \
   -c "INSERT INTO documents (filename, content_type, size, storage_key, uploaded_by) VALUES ('test.pdf','application/pdf',1024,'test-key','wassim');"
 # → l'événement doit apparaître dans Kafbat UI, topic docs.public.documents
 
-# Build
+# Build + tests (unitaires + Testcontainers e2e)
 mvn verify
+
+# Lancer les 6 microservices en local puis le frontend
+./infra/run-services.ps1               # sinon : ./infra/run-services.sh
+cd frontend && npm install && npm start # http://localhost:4200  (login wassim / wassim2026)
 ```
 
-**Interfaces web** : Kafbat UI `:8080` · Kafka Connect `:8083` · MinIO Console `:9001` · MailHog `:8025`
+Pas-à-pas complet pour un lecteur externe : voir la section « Démarrage » du [README](../README.md).
+
+**Interfaces web** : frontend `:4200` · Kafbat UI `:8080` · Kafka Connect `:8083` · MinIO Console `:9001` (minioadmin/minioadmin) · MailHog `:8025`
