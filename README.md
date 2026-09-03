@@ -2,9 +2,7 @@
 
 [![CI](https://github.com/Wvssim/cdc-streaming-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/Wvssim/cdc-streaming-pipeline/actions/workflows/ci.yml)
 
-## 🎬 Démonstration vidéo de la plateforme
-
-> **Extrait animé de 16 secondes — lecture automatique et en boucle.**
+## 🎬 Aperçu du projet
 
 ![Démonstration animée de la plateforme documentaire CDC](Assets/demonstration_plateforme_cdc.gif)
 

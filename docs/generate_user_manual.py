@@ -134,7 +134,7 @@ doc.core_properties.title = "Manuel d’utilisation — Plateforme documentaire 
 doc.core_properties.author = OWNER
 doc.core_properties.subject = "Guide utilisateur et d’exploitation de la plateforme CDC"
 doc.core_properties.keywords = f"CDC, Kafka, microservices, EMSI, 6Solutions, {OWNER}, {GITHUB}"
-doc.core_properties.comments = f"Travail original de {OWNER}. Dépôt officiel : {GITHUB}"
+doc.core_properties.comments = f"Dépôt GitHub : Wvssim/cdc-streaming-pipeline"
 
 # En-tête et pied de page avec attribution persistante.
 header = sec.header.paragraphs[0]
@@ -147,7 +147,7 @@ footer_table = sec.footer.add_table(rows=1, cols=2, width=Cm(16.8))
 footer_table.columns[0].width = Cm(13.5)
 footer_table.columns[1].width = Cm(3.3)
 left = footer_table.cell(0, 0).paragraphs[0]
-left.add_run(f"© 2026 {OWNER} · {GITHUB}").font.size = Pt(8)
+left.add_run(f"© 2026 {OWNER} · GitHub : Wvssim").font.size = Pt(8)
 add_page_number(footer_table.cell(0, 1).paragraphs[0])
 
 # Page de couverture.
@@ -191,21 +191,20 @@ p = doc.add_paragraph()
 p.alignment = WD_ALIGN_PARAGRAPH.CENTER
 p.add_run("Dépôt officiel du projet :\n").bold = True
 add_link(p, GITHUB, GITHUB)
-p = doc.add_paragraph("Version 1.0 — septembre 2026")
+p = doc.add_paragraph("Septembre 2026")
 p.alignment = WD_ALIGN_PARAGRAPH.CENTER
 p.runs[0].italic = True
 doc.add_page_break()
 
 doc.add_heading("Informations sur le document", level=1)
-info = doc.add_table(rows=6, cols=2)
+info = doc.add_table(rows=5, cols=2)
 info.style = "Table Grid"
 info.alignment = WD_TABLE_ALIGNMENT.CENTER
 data = (
     ("Titre", "Manuel d’utilisation de la plateforme documentaire événementielle"),
-    ("Version", "1.0"),
     ("Date", "3 septembre 2026"),
     ("Public concerné", "Utilisateur métier, encadrant, évaluateur et exploitant technique"),
-    ("Auteur et propriétaire", OWNER),
+    ("Auteur", OWNER),
     ("Référence officielle", GITHUB),
 )
 for row, (a, b) in zip(info.rows, data):
@@ -214,8 +213,6 @@ for row, (a, b) in zip(info.rows, data):
     set_cell_shading(row.cells[0], "EAF3F8")
 doc.add_heading("Objet du manuel", level=2)
 doc.add_paragraph("Ce manuel explique l’utilisation fonctionnelle de la plateforme, depuis l’authentification jusqu’au suivi des traitements asynchrones. Il présente également les interfaces techniques nécessaires à la démonstration et au diagnostic du pipeline de capture des changements.")
-add_note(doc, "Attribution", f"Ce document et le projet associé constituent un travail original de {OWNER}. La provenance peut être vérifiée dans les métadonnées du document, son pied de page et le dépôt GitHub officiel.")
-
 doc.add_heading("Table des matières", level=1)
 add_toc(doc.add_paragraph())
 doc.add_page_break()
@@ -326,13 +323,12 @@ doc.add_heading("8. Bonnes pratiques", level=1)
 for item in ("Ne jamais partager un jeton d’authentification dans une capture ou un dépôt public.", "Conserver les secrets dans des variables d’environnement.", "Utiliser des fichiers de test dépourvus de données personnelles.", "Vérifier les journaux avant de rejouer un consumer group.", "Sauvegarder PostgreSQL et MinIO avant toute opération destructive.", "Désactiver Swagger et les interfaces techniques dans un environnement exposé."):
     doc.add_paragraph(item, style="List Bullet")
 
-doc.add_heading("9. Références et propriété", level=1)
+doc.add_heading("9. Références", level=1)
 doc.add_paragraph(f"Auteur : {OWNER}")
 doc.add_paragraph("Établissement : EMSI Casablanca")
 doc.add_paragraph("Organisme d’accueil : 6Solutions")
 p = doc.add_paragraph("Dépôt GitHub officiel : ")
 add_link(p, GITHUB, GITHUB)
-doc.add_paragraph("Toute copie ou adaptation doit conserver une attribution explicite à l’auteur et une référence au dépôt officiel. Les noms et marques des technologies et organismes cités restent la propriété de leurs détenteurs respectifs.")
 add_note(doc, "Fin du manuel", "Pour une démonstration visuelle complète, consulter également la vidéo Demonstration_Plateforme_CDC.mp4 fournie avec les livrables.")
 
 doc.save(OUTPUT)
