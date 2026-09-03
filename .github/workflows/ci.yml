@@ -17,5 +17,26 @@ jobs:
           java-version: '21'
           cache: maven
 
+      - name: Install native Tesseract runtime
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y tesseract-ocr tesseract-ocr-eng
+          TESSDATA_FILE="$(dpkg -L tesseract-ocr-eng | grep '/eng.traineddata$' | head -n 1)"
+          TESSDATA_DIR="$(dirname "$TESSDATA_FILE")"
+          echo "TESSDATA_PATH=$TESSDATA_DIR" >> "$GITHUB_ENV"
+
       - name: Build & verify
         run: mvn -B -ntp verify
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build and test Angular frontend
+        working-directory: frontend
+        run: |
+          npm ci
+          npm test -- --watch=false
+          npm run build

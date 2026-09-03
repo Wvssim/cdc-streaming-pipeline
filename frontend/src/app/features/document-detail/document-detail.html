@@ -10,6 +10,10 @@
       <h1>{{ doc.filename }}</h1>
       <p>{{ doc.contentType }} · {{ formatSize(doc.size) }} · déposé par {{ doc.uploadedBy }} le {{ formatDate(doc.uploadedAt) }}</p>
     </div>
+    <button class="download-button" type="button" (click)="download()" [disabled]="downloading()">
+      <app-icon name="download" />
+      {{ downloading() ? 'Téléchargement...' : 'Télécharger' }}
+    </button>
   </header>
 
   <div class="detail-grid">

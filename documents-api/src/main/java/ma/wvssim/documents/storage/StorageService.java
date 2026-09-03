@@ -1,6 +1,7 @@
 package ma.wvssim.documents.storage;
 
 import io.minio.MinioClient;
+import io.minio.GetObjectArgs;
 import io.minio.PutObjectArgs;
 import io.minio.RemoveObjectArgs;
 import org.springframework.stereotype.Service;
@@ -49,6 +50,16 @@ public class StorageService {
             minioClient.removeObject(RemoveObjectArgs.builder().bucket(bucket).object(key).build());
         } catch (Exception e) {
             throw new StorageException("suppression dans MinIO impossible", e);
+        }
+    }
+
+    /** Lit l'objet MinIO afin de le restituer via l'endpoint de telechargement. */
+    public byte[] read(String key) {
+        try (InputStream in = minioClient.getObject(
+                GetObjectArgs.builder().bucket(bucket).object(key).build())) {
+            return in.readAllBytes();
+        } catch (Exception e) {
+            throw new StorageException("lecture depuis MinIO impossible", e);
         }
     }
 }

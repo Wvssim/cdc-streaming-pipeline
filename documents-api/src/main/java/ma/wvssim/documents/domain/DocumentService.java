@@ -49,6 +49,13 @@ public class DocumentService {
         return repository.findById(id).orElseThrow(() -> new DocumentNotFoundException(id));
     }
 
+    @Transactional(readOnly = true)
+    public DownloadedDocument download(Long id) {
+        Document document = findById(id);
+        byte[] content = storageService.read(document.getStorageKey());
+        return new DownloadedDocument(document.getFilename(), document.getContentType(), content);
+    }
+
     /** Le flush JPA emet un UPDATE, capte par Debezium avec before/after grace a REPLICA IDENTITY FULL. */
     @Transactional
     public Document rename(Long id, String newFilename) {

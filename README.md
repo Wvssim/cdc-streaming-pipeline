@@ -2,6 +2,12 @@
 
 [![CI](https://github.com/Wvssim/cdc-streaming-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/Wvssim/cdc-streaming-pipeline/actions/workflows/ci.yml)
 
+## Aperçu de la plateforme
+
+![Démonstration animée de la plateforme documentaire CDC](Assets/demonstration_plateforme_cdc.gif)
+
+> Aperçu accéléré de l'interface documentaire, du suivi des traitements, de la supervision Kafka et du stockage objet.
+
 Plateforme de dépôt et de traitement de documents, bâtie sur un **pipeline CDC event-driven** :
 PostgreSQL → Debezium → Kafka → 5 microservices consommateurs indépendants (fan-out).
 
@@ -43,7 +49,7 @@ Plan de travail : **[docs/plan-6-semaines.md](docs/plan-6-semaines.md)**.
 
 | Service | Rôle | Port | Endpoint de lecture |
 |---|---|---|---|
-| `documents-api` | Producteur. Upload multipart → métadonnées PostgreSQL + fichier MinIO. Émet aussi le JWT (`POST /api/auth/login`). Expose `PUT`/`DELETE /api/documents/{id}` pour exercer les événements CDC `UPDATE`/`DELETE` | 8081 | `GET /api/documents` |
+| `documents-api` | Producteur. Upload multipart → métadonnées PostgreSQL + fichier MinIO. Émet aussi le JWT (`POST /api/auth/login`). Expose téléchargement, renommage et suppression | 8081 | `GET /api/documents` |
 | `audit-service` | Trace de chaque opération (qui, quoi, quand) | 8082 | `GET /api/audit` |
 | `notification-service` | E-mail de confirmation à l'utilisateur (MailHog en dev) | 8084 | `GET /api/notifications` |
 | `blockchain-service` | Registre d'intégrité par chaîne de hash SHA-256 | 8085 | `GET /api/integrity` |
@@ -138,6 +144,10 @@ TOKEN=$(curl -s -X POST http://localhost:8081/api/auth/login \
 curl -H "Authorization: Bearer $TOKEN" -F "file=@monfichier.pdf" -F "uploadedBy=demo" \
   http://localhost:8081/api/documents
 
+# Télécharger le contenu original (remplacer 1 par l'identifiant retourné)
+curl -OJ -H "Authorization: Bearer $TOKEN" \
+  http://localhost:8081/api/documents/1/content
+
 # Vérifier le fan-out : le même événement a déclenché les 4 services
 curl -H "Authorization: Bearer $TOKEN" http://localhost:8082/api/audit
 curl -H "Authorization: Bearer $TOKEN" http://localhost:8084/api/notifications
@@ -192,11 +202,12 @@ celle qui suit Spring Boot 4), en accès libre (pas de JWT requis sur ces deux r
 
 Ex. `documents-api` : http://localhost:8081/swagger-ui.html
 
-## OCR des images (Tesseract, optionnel)
+## OCR des images (Tesseract)
 
 `ocr-service` route automatiquement les images (`content_type` commençant par `image/`) vers
 Tesseract, les autres formats (PDF/DOCX) restant sur Tika. Tesseract (via `tess4j`) s'appuie sur
-le binaire natif du même nom : sans lui, un dépôt d'image reste visible mais sans texte OCR.
+le moteur natif du même nom. La CI installe le moteur et exécute un vrai test OCR sur une image
+générée pendant le test ; elle ne se limite donc pas à simuler l'extracteur.
 
 Pour l'activer :
 1. Installer Tesseract OCR ([UB Mannheim builds](https://github.com/UB-Mannheim/tesseract/wiki)
@@ -208,12 +219,12 @@ Pour l'activer :
 ## Avancement
 
 - Infrastructure et socle CDC (Docker Compose, connecteur Debezium, CI)
-- `documents-api` — upload, Claim Check MinIO, `PUT`/`DELETE` (événements CDC `UPDATE`/`DELETE`)
+- `documents-api` — upload, téléchargement, Claim Check MinIO, renommage et suppression
 - `audit-service` — premier consommateur, jalon prouvé (upload → ligne d'audit automatique)
 - `notification-service`, `blockchain-service`, `siem-service` — fan-out complet + Dead Letter
   Topic (1 upload → 4 services en parallèle, message invalide isolé en DLT)
-- `ocr-service` — extraction via Apache Tika (PDF/DOCX) ; dispatch Tesseract câblé pour les
-  images (binaire natif requis pour l'activer)
+- `ocr-service` — extraction via Apache Tika (PDF/DOCX) et Tesseract/tess4j pour les images,
+  avec validation native dans la CI
 - Frontend Angular — design system + 7 écrans (Tableau de bord, Documents, Piste d'audit,
   Notifications, Alertes SIEM, Intégrité, Détail document) branchés sur les vraies APIs
 - Tests d'intégration Testcontainers e2e, générateur de données de démo (S6 · T6.1 / T6.2)
@@ -231,3 +242,15 @@ mvn -B verify            # compilation + tests unitaires + tests Testcontainers 
 Les tests e2e démarrent des conteneurs Postgres + Kafka + Connect éphémères (Testcontainers) :
 prévoir de la marge au premier run (pull des images). CI : `mvn -B -ntp verify` à chaque push
 ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)).
+
+### Validation du rejeu et de la charge
+
+Le service ciblé doit être arrêté avant la remise à zéro de ses offsets :
+
+```powershell
+.\infra\replay-consumer.ps1 -Group audit-service
+.\infra\load-test.ps1 -Deposits 30
+```
+
+Le test de charge vérifie à la fois le débit cible de 30 dépôts/minute et le retour à un lag
+agrégé nul pour les cinq consumer groups.

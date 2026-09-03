@@ -2,6 +2,9 @@ package ma.wvssim.documents.api;
 
 import ma.wvssim.documents.domain.Document;
 import ma.wvssim.documents.domain.DocumentService;
+import ma.wvssim.documents.domain.DownloadedDocument;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 @RestController
@@ -47,6 +51,25 @@ public class DocumentController {
     @GetMapping("/{id}")
     public DocumentResponse get(@PathVariable Long id) {
         return DocumentResponse.from(service.findById(id));
+    }
+
+    @GetMapping("/{id}/content")
+    public ResponseEntity<byte[]> download(@PathVariable Long id) {
+        DownloadedDocument document = service.download(id);
+        MediaType mediaType;
+        try {
+            mediaType = MediaType.parseMediaType(document.contentType());
+        } catch (IllegalArgumentException ignored) {
+            mediaType = MediaType.APPLICATION_OCTET_STREAM;
+        }
+        ContentDisposition disposition = ContentDisposition.attachment()
+                .filename(document.filename(), StandardCharsets.UTF_8)
+                .build();
+        return ResponseEntity.ok()
+                .contentType(mediaType)
+                .contentLength(document.content().length)
+                .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
+                .body(document.content());
     }
 
     @PutMapping("/{id}")

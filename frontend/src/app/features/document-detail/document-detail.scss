@@ -10,6 +10,30 @@
   }
 }
 
+.download-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 10px 16px;
+  border: 0;
+  border-radius: var(--radius-pill, 999px);
+  background: var(--gray-900);
+  color: white;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:disabled {
+    cursor: wait;
+    opacity: 0.6;
+  }
+
+  app-icon {
+    width: 18px;
+    height: 18px;
+  }
+}
+
 .detail-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));

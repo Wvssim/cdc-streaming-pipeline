@@ -19,6 +19,10 @@ export class DocumentsService {
     return this.http.get<DocumentDto>(`${API.documents}/${id}`);
   }
 
+  download(id: number): Observable<Blob> {
+    return this.http.get(`${API.documents}/${id}/content`, { responseType: 'blob' });
+  }
+
   getOcr(docId: number): Observable<OcrEntry | null> {
     return this.http.get<OcrEntry>(`${API.ocr}/${docId}`).pipe(catchError(() => of(null)));
   }

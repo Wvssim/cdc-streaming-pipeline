@@ -47,6 +47,7 @@ export class DocumentDetail {
   readonly alerts = signal<SiemAlert[]>([]);
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
+  readonly downloading = signal(false);
 
   readonly timeline = computed<TimelineItem[]>(() => {
     const audit = this.auditEntries()[0] ?? null;
@@ -125,6 +126,27 @@ export class DocumentDetail {
       error: () => {
         this.loading.set(false);
         this.error.set('Impossible de charger le détail de ce document.');
+      },
+    });
+  }
+
+  download(): void {
+    const document = this.document();
+    if (!document || this.downloading()) return;
+    this.downloading.set(true);
+    this.documentsService.download(this.docId).subscribe({
+      next: (content) => {
+        const url = URL.createObjectURL(content);
+        const anchor = window.document.createElement('a');
+        anchor.href = url;
+        anchor.download = document.filename;
+        anchor.click();
+        URL.revokeObjectURL(url);
+        this.downloading.set(false);
+      },
+      error: () => {
+        this.error.set('Impossible de télécharger ce document.');
+        this.downloading.set(false);
       },
     });
   }

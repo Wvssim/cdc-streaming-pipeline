@@ -13,3 +13,13 @@ CLAUDE.local.md
 # Aide-memoire perso (avancement, notes de reprise) : reference interne, pas pour le repo public
 docs/aide-memoire.md
 .run-logs/
+
+# Outils et sorties locales de production de la démonstration
+video-demo/node_modules/
+video-demo/video-demo/output/
+
+# Contrôles et fichiers temporaires du manuel
+docs/docx-media/
+docs/manual-contact-sheet.jpg
+docs/manual-cover-check.png
+docs/~$*
