@@ -2,11 +2,14 @@
 
 [![CI](https://github.com/Wvssim/cdc-streaming-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/Wvssim/cdc-streaming-pipeline/actions/workflows/ci.yml)
 
-## Aperçu de la plateforme
+## 🎬 Démonstration vidéo de la plateforme
+
+> **Extrait animé de 16 secondes — lecture automatique et en boucle.**
 
 ![Démonstration animée de la plateforme documentaire CDC](Assets/demonstration_plateforme_cdc.gif)
 
-> Aperçu accéléré de l'interface documentaire, du suivi des traitements, de la supervision Kafka et du stockage objet.
+Cette démonstration présente successivement l'interface documentaire, le suivi des traitements,
+la supervision Kafka et le stockage objet.
 
 Plateforme de dépôt et de traitement de documents, bâtie sur un **pipeline CDC event-driven** :
 PostgreSQL → Debezium → Kafka → 5 microservices consommateurs indépendants (fan-out).
